@@ -539,6 +539,115 @@
     .status-col strong {
       color: #fff;
     }
+
+    /* Mobile & Tablet Responsiveness */
+    @media (max-width: 960px) {
+      .container {
+        padding: 20px 20px 40px;
+      }
+
+      .arena-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 16px 12px 32px;
+      }
+
+      header {
+        padding-bottom: 16px;
+        margin-bottom: 20px;
+        justify-content: center;
+      }
+
+      .brand-wrap {
+        gap: 12px;
+        justify-content: center;
+      }
+
+      .uchiha-crest {
+        width: 38px;
+        height: 38px;
+      }
+
+      .card {
+        padding: 16px 14px;
+        border-radius: 14px;
+      }
+
+      .card-head {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+      }
+
+      .card-title {
+        font-size: 14px;
+      }
+
+      .portal-zone {
+        padding: 24px 14px;
+        border-radius: 12px;
+      }
+
+      .sharingan-eye-container {
+        width: 90px;
+        height: 90px;
+        margin-bottom: 12px;
+      }
+
+      .portal-title {
+        font-size: 15px;
+      }
+
+      .portal-sub {
+        font-size: 11px;
+      }
+
+      .file-analysis-card {
+        padding: 12px;
+        gap: 12px;
+      }
+
+      .file-thumb-wrap {
+        width: 68px;
+        height: 68px;
+      }
+
+      .file-name {
+        font-size: 13px;
+      }
+
+      .preset-item {
+        padding: 12px;
+      }
+
+      .preset-name {
+        font-size: 13px;
+      }
+
+      .preset-meta {
+        font-size: 10.5px;
+      }
+
+      .btn-sharingan {
+        padding: 15px 16px;
+      }
+
+      .btn-sharingan span {
+        font-size: 18px;
+        letter-spacing: 2px;
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 12px 14px;
+      }
+    }
   </style>
 </head>
 <body>
