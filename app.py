@@ -25,6 +25,8 @@ sys.path.insert(0, str(PROJECT_DIR))
 
 from engine import inspect_image, sanitize_image
 
+MAX_PAYLOAD_SIZE = 25 * 1024 * 1024  # 25 MB max body size limit (Anti-DoS)
+
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
@@ -46,6 +48,9 @@ class SharinganHTTPHandler(SimpleHTTPRequestHandler):
     def _read_json_body(self):
         content_length = int(self.headers.get('Content-Length', 0))
         if content_length <= 0:
+            return None
+        if content_length > MAX_PAYLOAD_SIZE:
+            self._send_json(413, {"error": "Payload exceeds 25 MB security limit"})
             return None
         body = self.rfile.read(content_length)
         try:
@@ -115,12 +120,11 @@ class SharinganHTTPHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-def run_server(port: int = 5050):
-    host = "0.0.0.0"
+def run_server(host: str = "127.0.0.1", port: int = 5050):
     server = ThreadedHTTPServer((host, port), SharinganHTTPHandler)
     print(f"\n=======================================================")
     print(f"  SHARINGAN • AI Metadata Genjutsu Cloaker")
-    print(f"  Local Server active at: http://localhost:{port}")
+    print(f"  Local Server active at: http://{host}:{port}")
     print(f"  Press Ctrl+C to terminate.")
     print(f"=======================================================\n")
     try:
@@ -163,6 +167,7 @@ def run_cli(input_path: str, preset: str, output_path: Optional[str]):
 def main():
     parser = argparse.ArgumentParser(description="SHARINGAN — AI Metadata Genjutsu Cloaker")
     parser.add_argument("--serve", action="store_true", help="Launch local web application UI")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Binding host (default: 127.0.0.1 for security)")
     parser.add_argument("--port", type=int, default=5050, help="Web server port (default: 5050)")
     parser.add_argument("-i", "--input", type=str, help="Input image file path")
     parser.add_argument("-p", "--preset", type=str, default="canon_r5",
@@ -173,7 +178,7 @@ def main():
     args = parser.parse_args()
 
     if args.serve or (not args.input and len(sys.argv) == 1):
-        run_server(args.port)
+        run_server(args.host, args.port)
     elif args.input:
         run_cli(args.input, args.preset, args.output)
     else:
