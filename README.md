@@ -88,6 +88,34 @@ python3 app.py -i input.png -p tsukuyomi_void -o void.png
 
 ---
 
+## 🦀 Rust Native & WebAssembly (Wasm) Engine
+
+This branch features the pure-Rust implementation with **zero external dependencies**:
+
+### 1. Build and Run Native Binary:
+```bash
+# Compile optimized release binary
+cargo build --release
+
+# Run embedded high-speed Web UI
+./target/release/sharingan-cli --serve --port 5050
+
+# Or sanitize directly from terminal:
+./target/release/sharingan-cli -i portrait.png -p canon_r5 -o clean.png
+```
+
+### 2. Compile to WebAssembly (In-Browser Execution):
+```bash
+# Add WebAssembly target
+rustup target add wasm32-unknown-unknown
+
+# Compile to ultra-compact WASM (~39 KB)
+cargo build --target wasm32-unknown-unknown --release
+```
+The resulting `target/wasm32-unknown-unknown/release/sharingan.wasm` (and `assets/sharingan.wasm`) runs directly inside modern web browsers with 0 server round-trips!
+
+---
+
 ## 🔬 How It Works (Technical Anatomy)
 
 Standard image re-saving utilities decompress pixel rasters and re-encode them, causing compression artifacts and generational loss.
