@@ -910,8 +910,15 @@
     function appendTermLog(tag, msg, color) {
       const line = document.createElement('div');
       line.className = 'term-line';
-      const colorStyle = color ? `style="color:${color};"` : '';
-      line.innerHTML = `<span class="term-tag">${tag}</span><span class="term-msg" ${colorStyle}>${msg}</span>`;
+      const tagSpan = document.createElement('span');
+      tagSpan.className = 'term-tag';
+      tagSpan.textContent = tag;
+      const msgSpan = document.createElement('span');
+      msgSpan.className = 'term-msg';
+      if (color) msgSpan.style.color = color;
+      msgSpan.textContent = msg;
+      line.appendChild(tagSpan);
+      line.appendChild(msgSpan);
       terminalBoxEl.appendChild(line);
       terminalBoxEl.scrollTop = terminalBoxEl.scrollHeight;
     }

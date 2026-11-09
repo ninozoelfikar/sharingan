@@ -11,6 +11,8 @@ use std::thread;
 
 use sharingan::{inspect_image, sanitize_image};
 
+const MAX_PAYLOAD_SIZE: usize = 25 * 1024 * 1024; // 25 MB limit
+
 fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
     let mut buffer = Vec::new();
     let mut temp = [0u8; 8192];
@@ -39,6 +41,11 @@ fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
             }
             Err(_) => return,
         }
+    }
+
+    if content_length > MAX_PAYLOAD_SIZE {
+        send_response(&mut stream, 413, "application/json", b"{\"error\":\"Payload exceeds 25 MB security limit\"}");
+        return;
     }
 
     // Read remaining body if Content-Length specified
@@ -128,27 +135,34 @@ fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
             send_response(&mut stream, 400, "application/json", b"{\"error\":\"Missing file field\"}");
         }
     } else if method == "GET" {
-        // Serve static files
+        // Serve static files with strict Anti-Path-Traversal protection
         let req_path = if raw_path == "/" || raw_path.is_empty() || raw_path == "/sharingan" || raw_path == "/sharingan/" {
             "index.html"
         } else {
             raw_path.trim_start_matches('/').trim_start_matches("sharingan/").trim_start_matches('/')
         };
 
+        if req_path.contains("..") || req_path.contains('\\') {
+            send_response(&mut stream, 403, "text/plain", b"403 Forbidden");
+            return;
+        }
+
         let file_path = project_dir.join(req_path);
-        if file_path.exists() && file_path.is_file() {
-            if let Ok(bytes) = fs::read(&file_path) {
-                let content_type = match file_path.extension().and_then(|s| s.to_str()).unwrap_or("") {
-                    "html" => "text/html; charset=utf-8",
-                    "svg" => "image/svg+xml",
-                    "woff2" => "font/woff2",
-                    "png" => "image/png",
-                    "jpg" | "jpeg" => "image/jpeg",
-                    "json" => "application/json",
-                    _ => "application/octet-stream",
-                };
-                send_response(&mut stream, 200, content_type, &bytes);
-                return;
+        if let (Ok(canon_file), Ok(canon_dir)) = (file_path.canonicalize(), project_dir.canonicalize()) {
+            if canon_file.starts_with(&canon_dir) && canon_file.is_file() {
+                if let Ok(bytes) = fs::read(&canon_file) {
+                    let content_type = match canon_file.extension().and_then(|s| s.to_str()).unwrap_or("") {
+                        "html" => "text/html; charset=utf-8",
+                        "svg" => "image/svg+xml",
+                        "woff2" => "font/woff2",
+                        "png" => "image/png",
+                        "jpg" | "jpeg" => "image/jpeg",
+                        "json" => "application/json",
+                        _ => "application/octet-stream",
+                    };
+                    send_response(&mut stream, 200, content_type, &bytes);
+                    return;
+                }
             }
         }
         send_response(&mut stream, 404, "text/plain", b"404 Not Found");
@@ -161,8 +175,10 @@ fn send_response(stream: &mut TcpStream, status: u16, content_type: &str, body: 
     let status_line = match status {
         200 => "HTTP/1.1 200 OK",
         400 => "HTTP/1.1 400 Bad Request",
+        403 => "HTTP/1.1 403 Forbidden",
         404 => "HTTP/1.1 404 Not Found",
         405 => "HTTP/1.1 405 Method Not Allowed",
+        413 => "HTTP/1.1 413 Payload Too Large",
         _ => "HTTP/1.1 500 Internal Server Error",
     };
 
@@ -340,11 +356,11 @@ fn main() {
     }
 
     if serve || (input_file.is_none() && args.len() == 1) {
-        let addr = format!("0.0.0.0:{}", port);
+        let addr = format!("127.0.0.1:{}", port);
         let listener = TcpListener::bind(&addr).expect("Failed to bind TCP listener");
         println!("=======================================================");
         println!("  SHARINGAN (写輪眼) — Pure Rust Native Engine");
-        println!("  High-Speed Server active at: http://localhost:{}", port);
+        println!("  High-Speed Server active at: http://127.0.0.1:{}", port);
         println!("  Press Ctrl+C to terminate.");
         println!("=======================================================");
 
