@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SHARINGAN — Anti AI Detector</title>
+  <title>SHARINGAN — Anti AI Detector Genjutsu</title>
   <link rel="icon" type="image/svg+xml" href="assets/sharingan_eye.svg">
   <style>
     @font-face {
@@ -98,7 +98,7 @@
       font-family: 'Shojumaru', var(--font);
       font-size: 21px;
       font-weight: 400;
-      letter-spacing: 2.2px;
+      letter-spacing: 7.86px;
       line-height: 1.1;
       display: block;
       color: #ffffff;
@@ -110,7 +110,7 @@
       font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
-      letter-spacing: 2.5px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
       display: block;
     }
@@ -334,6 +334,125 @@
       font-size: 10.5px;
       font-family: var(--font-mono);
       font-weight: 600;
+    }
+
+    /* Batch Queue Styling (Max 5 files) */
+    .batch-queue-wrap {
+      width: 100%;
+    }
+
+    .batch-queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .batch-limit-pill {
+      font-size: 10px;
+      color: var(--crimson);
+      background: var(--crimson-dim);
+      border: 1px solid var(--crimson);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .batch-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .batch-item-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+    }
+
+    .batch-item-row.processing {
+      border-color: var(--crimson);
+      background: rgba(255, 30, 66, 0.08);
+      box-shadow: 0 0 14px var(--crimson-dim);
+    }
+
+    .batch-item-thumb {
+      width: 42px;
+      height: 42px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #1c1c24;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .batch-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .batch-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .batch-item-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .batch-item-meta {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    .batch-item-badge {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .badge-pending {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    .badge-ai-found {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .badge-clean {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .badge-cloaked {
+      background: #059669;
+      color: #fff;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
     }
 
     /* Jutsu Terminal Output */
@@ -670,7 +789,7 @@
           <div class="brand-title">
             SHARINGAN
           </div>
-          <p class="brand-sub">Anti AI Detector</p>
+          <p class="brand-sub">Anti AI Detector Genjutsu</p>
         </div>
       </div>
     </header>
@@ -688,8 +807,8 @@
             <span style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">DRAG & DROP IMAGE</span>
           </div>
 
-          <!-- Hidden File Input -->
-          <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp" style="display:none">
+          <!-- Hidden File Input (Multiple up to 5 files) -->
+          <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp" style="display:none">
 
           <!-- Interactive Sharingan Dropzone -->
           <div class="portal-zone" id="portalZone">
@@ -719,8 +838,8 @@
               </svg>
             </div>
 
-            <h3 class="portal-title">Drop AI Image into the Sharingan Eye</h3>
-            <p class="portal-sub">Supports PNG (C2PA, caBX, prompts), JPG (APP11 JUMBF), and WebP.<br>Strips all synthetic machine signatures losslessly.</p>
+            <h3 class="portal-title">Drop up to 5 AI Images into the Sharingan Eye</h3>
+            <p class="portal-sub">Supports PNG (C2PA, caBX, prompts), JPG (APP11 JUMBF), and WebP.<br>Batch cloaks up to 5 files losslessly.</p>
           </div>
 
           <!-- File Analysis Card Preview (Loaded Example) -->
@@ -853,19 +972,16 @@
   </div>
 
   <script>
-    let currentFile = null;
-    let currentBase64 = null;
+    const MAX_BATCH = 5;
+    let queuedFiles = []; // Array of { file, base64, info, status: 'pending'|'scanning'|'ai_found'|'clean'|'cloaked'|'error' }
     let selectedPreset = 'canon_r5';
 
     const portalZone = document.getElementById('portalZone');
     const fileInput = document.getElementById('fileInput');
-    const fileNameEl = document.getElementById('fileName');
-    const fileStatsEl = document.getElementById('fileStats');
-    const detectedTagTextEl = document.getElementById('detectedTagText');
+    const fileAnalysisCard = document.getElementById('fileAnalysisCard');
     const terminalBoxEl = document.getElementById('terminalBox');
     const btnActivate = document.getElementById('btnActivate');
     const btnActivateText = document.getElementById('btnActivateText');
-    const fileThumbWrap = document.getElementById('fileThumbWrap');
 
     // Preset selector
     document.querySelectorAll('.preset-item').forEach(item => {
@@ -881,8 +997,8 @@
     portalZone.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        handleFileSelection(e.target.files[0]);
+      if (e.target.files && e.target.files.length > 0) {
+        handleFilesSelected(e.target.files);
       }
     });
 
@@ -903,8 +1019,8 @@
     });
 
     portalZone.addEventListener('drop', (e) => {
-      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-        handleFileSelection(e.dataTransfer.files[0]);
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFilesSelected(e.dataTransfer.files);
       }
     });
 
@@ -928,118 +1044,257 @@
       terminalBoxEl.innerHTML = '';
     }
 
-    function handleFileSelection(file) {
-      currentFile = file;
-      fileNameEl.textContent = file.name;
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-      fileStatsEl.textContent = `${sizeMb} MB • Analyzing container...`;
+    function handleFilesSelected(files) {
+      let fileList = Array.from(files).filter(f => {
+        const type = f.type.toLowerCase();
+        const name = f.name.toLowerCase();
+        return type.startsWith('image/') || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.webp');
+      });
+
+      if (fileList.length === 0) {
+        alert('Please select valid PNG, JPG, or WebP image files.');
+        return;
+      }
+
+      if (fileList.length > MAX_BATCH) {
+        appendTermLog('[BATCH]', `Selected ${fileList.length} files. Cap is 5. Queuing first 5 files only.`, '#f59e0b');
+        fileList = fileList.slice(0, MAX_BATCH);
+      }
+
+      queuedFiles = fileList.map(f => ({
+        file: f,
+        base64: null,
+        info: null,
+        status: 'pending'
+      }));
+
       clearTermLog();
-      appendTermLog('[LOAD]', `Loaded file: ${file.name} (${file.size.toLocaleString()} bytes)`);
-
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        currentBase64 = e.target.result;
-        
-        fileThumbWrap.innerHTML = `
-          <img src="${currentBase64}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
-          <span class="seal-ai-badge" id="sealBadge">SCANNING</span>
-        `;
-
-        try {
-          appendTermLog('[SCAN]', 'Disassembling container chunks & scanning C2PA manifests...');
-          const resp = await fetch('api/inspect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file: currentBase64, filename: file.name })
-          });
-          const res = await resp.json();
-
-          if (res.success && res.data) {
-            const data = res.data;
-            fileStatsEl.innerHTML = `${data.dimensions} &bull; ${data.size_formatted} &bull; ${data.format}`;
-            const badge = document.getElementById('sealBadge');
-
-            if (data.is_ai_detected) {
-              if (badge) {
-                badge.textContent = 'AI FOUND';
-                badge.style.background = '#ef4444';
-                badge.style.borderColor = '#b91c1c';
-              }
-              detectedTagTextEl.textContent = `${data.detected_markers.length} Synthetic AI Marker(s) Detected`;
-              
-              data.detected_markers.forEach(m => {
-                appendTermLog('[DETECTED]', `${m.tag} (${m.type}): ${m.description}`, '#f87171');
-              });
-              appendTermLog('[STATUS]', 'Genjutsu required. Ready to burn machine tags and cast camera illusion.', '#fca5a5');
-            } else {
-              if (badge) {
-                badge.textContent = 'CLEAN';
-                badge.style.background = '#10b981';
-                badge.style.borderColor = '#059669';
-              }
-              detectedTagTextEl.textContent = `No synthetic markers found. File is clean.`;
-              appendTermLog('[CLEAN]', 'Container is clean of known C2PA/AI manifest tags.', '#34d399');
-            }
-          }
-        } catch (err) {
-          appendTermLog('[ERROR]', `Inspection failed: ${err.message}`, '#f87171');
-        }
-      };
-      reader.readAsDataURL(file);
+      appendTermLog('[BATCH]', `Loaded ${queuedFiles.length} file(s) into Genjutsu arena (Batch Limit: 5).`);
+      renderQueueUI();
+      processQueueInspection();
     }
 
+    function renderQueueUI() {
+      if (queuedFiles.length === 0) return;
+
+      if (queuedFiles.length === 1) {
+        const item = queuedFiles[0];
+        fileAnalysisCard.innerHTML = `
+          <div class="file-thumb-wrap" id="fileThumbWrap">
+            <div style="width:100%; height:100%; background: #1c1c24; display:flex; align-items:center; justify-content:center;">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <span class="seal-ai-badge" id="sealBadge">SCANNING</span>
+          </div>
+          <div class="file-meta-details">
+            <div class="file-name" id="fileName">${item.file.name}</div>
+            <div class="file-stats" id="fileStats">${(item.file.size / (1024 * 1024)).toFixed(2)} MB &bull; Analyzing container...</div>
+            <div class="detected-tag" id="detectedTag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              <span id="detectedTagText">Reading container chunks...</span>
+            </div>
+          </div>
+        `;
+        btnActivateText.textContent = 'Activate';
+      } else {
+        fileAnalysisCard.innerHTML = `
+          <div class="batch-queue-wrap">
+            <div class="batch-queue-header">
+              <span>Batch Queue: <strong>${queuedFiles.length} files</strong></span>
+              <span class="batch-limit-pill">MAX 5 FILES</span>
+            </div>
+            <div class="batch-list" id="batchList">
+              ${queuedFiles.map((item, idx) => `
+                <div class="batch-item-row" id="batchRow_${idx}">
+                  <div class="batch-item-thumb" id="batchThumb_${idx}">
+                    <div style="width:100%;height:100%;background:#1c1c24;display:flex;align-items:center;justify-content:center;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  </div>
+                  <div class="batch-item-info">
+                    <div class="batch-item-name">${item.file.name}</div>
+                    <div class="batch-item-meta" id="batchMeta_${idx}">${(item.file.size / (1024*1024)).toFixed(2)} MB &bull; Scanning...</div>
+                  </div>
+                  <span class="batch-item-badge badge-pending" id="batchBadge_${idx}">PENDING</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        btnActivateText.textContent = `Activate (${queuedFiles.length} Files)`;
+      }
+    }
+
+    async function processQueueInspection() {
+      for (let i = 0; i < queuedFiles.length; i++) {
+        const item = queuedFiles[i];
+        await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            item.base64 = e.target.result;
+
+            // Update thumbnail
+            if (queuedFiles.length === 1) {
+              const thumbWrap = document.getElementById('fileThumbWrap');
+              if (thumbWrap) {
+                thumbWrap.innerHTML = `
+                  <img src="${item.base64}">
+                  <span class="seal-ai-badge" id="sealBadge">SCANNING</span>
+                `;
+              }
+            } else {
+              const thumbEl = document.getElementById(`batchThumb_${i}`);
+              if (thumbEl) {
+                thumbEl.innerHTML = `<img src="${item.base64}">`;
+              }
+            }
+
+            // Inspect via API
+            try {
+              appendTermLog('[SCAN]', `[${i + 1}/${queuedFiles.length}] Disassembling '${item.file.name}'...`);
+              const resp = await fetch('api/inspect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file: item.base64, filename: item.file.name })
+              });
+              const res = await resp.json();
+
+              if (res.success && res.data) {
+                item.info = res.data;
+                const isAi = res.data.is_ai_detected;
+                item.status = isAi ? 'ai_found' : 'clean';
+
+                if (queuedFiles.length === 1) {
+                  const fileStatsEl = document.getElementById('fileStats');
+                  const sealBadgeEl = document.getElementById('sealBadge');
+                  const detectedTagTextEl = document.getElementById('detectedTagText');
+                  if (fileStatsEl) fileStatsEl.innerHTML = `${item.info.dimensions} &bull; ${item.info.size_formatted} &bull; ${item.info.format}`;
+                  if (sealBadgeEl) {
+                    sealBadgeEl.textContent = isAi ? 'AI FOUND' : 'CLEAN';
+                    sealBadgeEl.style.background = isAi ? '#ef4444' : '#10b981';
+                  }
+                  if (detectedTagTextEl) {
+                    detectedTagTextEl.textContent = isAi 
+                      ? `${item.info.detected_markers.length} Synthetic AI Marker(s) Detected`
+                      : 'No synthetic markers found. Clean container.';
+                  }
+                } else {
+                  const metaEl = document.getElementById(`batchMeta_${i}`);
+                  const badgeEl = document.getElementById(`batchBadge_${i}`);
+                  if (metaEl) metaEl.innerHTML = `${item.info.dimensions} &bull; ${item.info.size_formatted}`;
+                  if (badgeEl) {
+                    badgeEl.textContent = isAi ? 'AI FOUND' : 'CLEAN';
+                    badgeEl.className = isAi ? 'batch-item-badge badge-ai-found' : 'batch-item-badge badge-clean';
+                  }
+                }
+
+                if (isAi) {
+                  item.info.detected_markers.forEach(m => {
+                    appendTermLog('[DETECTED]', `'${item.file.name}': ${m.tag} (${m.type})`, '#f87171');
+                  });
+                }
+              }
+            } catch (err) {
+              appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${err.message}`, '#f87171');
+            }
+            resolve();
+          };
+          reader.readAsDataURL(item.file);
+        });
+      }
+      appendTermLog('[STATUS]', `Inspection complete for ${queuedFiles.length} file(s). Ready for Genjutsu activation.`, '#34d399');
+    }
+
+    // Activate Button Handler (Sequential Batch Execution)
     btnActivate.addEventListener('click', async () => {
-      if (!currentFile || !currentBase64) {
-        alert('Please drop or select an image into the Sharingan eye first!');
+      if (queuedFiles.length === 0) {
+        alert('Please drop or select up to 5 images into the Sharingan eye first!');
         fileInput.click();
         return;
       }
 
-      btnActivateText.textContent = 'Activating...';
       btnActivate.style.pointerEvents = 'none';
       btnActivate.style.filter = 'brightness(1.2)';
-      appendTermLog('[EXEC]', `Stripping all synthetic AI markers losslessly...`, '#38bdf8');
-      appendTermLog('[GENJUTSU]', `Injecting ${selectedPreset} optical camera EXIF signature...`, '#a78bfa');
+      btnActivateText.textContent = `Cloaking ${queuedFiles.length} File(s)...`;
 
-      try {
-        const resp = await fetch('api/sanitize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file: currentBase64,
-            filename: currentFile.name,
-            preset: selectedPreset
-          })
-        });
+      appendTermLog('[EXEC]', `Initiating batch Genjutsu for ${queuedFiles.length} file(s) with '${selectedPreset}'...`, '#38bdf8');
 
-        const res = await resp.json();
-        if (res.success && res.file) {
-          appendTermLog('[COMPLETE]', `Lossless sanitization complete! Delta: ${res.delta_bytes} bytes.`, '#34d399');
-          appendTermLog('[DOWNLOAD]', `Triggering download: ${res.filename}`, '#10b981');
-
-          const link = document.createElement('a');
-          link.href = 'data:application/octet-stream;base64,' + res.file;
-          link.download = res.filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          const badge = document.getElementById('sealBadge');
-          if (badge) {
-            badge.textContent = 'CLOAKED';
-            badge.style.background = '#10b981';
-            badge.style.borderColor = '#059669';
-          }
-        } else {
-          appendTermLog('[ERROR]', res.error || 'Sanitization failed', '#ef4444');
+      let successCount = 0;
+      for (let i = 0; i < queuedFiles.length; i++) {
+        const item = queuedFiles[i];
+        const row = document.getElementById(`batchRow_${i}`);
+        const badge = document.getElementById(`batchBadge_${i}`);
+        if (row) row.classList.add('processing');
+        if (badge) {
+          badge.textContent = 'CLOAKING';
+          badge.className = 'batch-item-badge badge-pending';
         }
-      } catch (err) {
-        appendTermLog('[ERROR]', `Execution failed: ${err.message}`, '#ef4444');
-      } finally {
-        btnActivateText.textContent = 'Activate';
-        btnActivate.style.pointerEvents = 'auto';
-        btnActivate.style.filter = '';
+
+        appendTermLog('[JUTSU]', `[${i + 1}/${queuedFiles.length}] Cloaking '${item.file.name}'...`, '#a78bfa');
+
+        try {
+          const resp = await fetch('api/sanitize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              file: item.base64,
+              filename: item.file.name,
+              preset: selectedPreset
+            })
+          });
+
+          const res = await resp.json();
+          if (res.success && res.file) {
+            successCount++;
+            item.status = 'cloaked';
+            if (row) row.classList.remove('processing');
+            if (badge) {
+              badge.textContent = 'CLOAKED';
+              badge.className = 'batch-item-badge badge-cloaked';
+            }
+
+            appendTermLog('[SUCCESS]', `[${i + 1}/${queuedFiles.length}] Cloaked '${res.filename}' (Delta: ${res.delta_bytes} B)`, '#34d399');
+
+            // Trigger download
+            const link = document.createElement('a');
+            link.href = 'data:application/octet-stream;base64,' + res.file;
+            link.download = res.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // 350ms delay between files to prevent browser download popup blocking
+            if (i < queuedFiles.length - 1) {
+              await new Promise(r => setTimeout(r, 350));
+            }
+          } else {
+            if (badge) {
+              badge.textContent = 'ERROR';
+              badge.className = 'batch-item-badge badge-ai-found';
+            }
+            appendTermLog('[ERROR]', `Failed on '${item.file.name}': ${res.error}`, '#ef4444');
+          }
+        } catch (err) {
+          if (badge) {
+            badge.textContent = 'ERROR';
+            badge.className = 'batch-item-badge badge-ai-found';
+          }
+          appendTermLog('[ERROR]', `Failed on '${item.file.name}': ${err.message}`, '#ef4444');
+        }
       }
+
+      if (queuedFiles.length === 1) {
+        const sealBadgeEl = document.getElementById('sealBadge');
+        if (sealBadgeEl) {
+          sealBadgeEl.textContent = 'CLOAKED';
+          sealBadgeEl.style.background = '#059669';
+        }
+      }
+
+      appendTermLog('[ALL COMPLETE]', `Batch Genjutsu finished! ${successCount}/${queuedFiles.length} file(s) cloaked bit-for-bit.`, '#10b981');
+      btnActivate.style.pointerEvents = 'auto';
+      btnActivate.style.filter = '';
+      btnActivateText.textContent = queuedFiles.length > 1 ? `Activate (${queuedFiles.length} Files)` : 'Activate';
     });
   </script>
 </body>

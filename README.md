@@ -1,5 +1,5 @@
 # 🔴 SHARINGAN (写輪眼)
-### Anti AI Detector & Lossless Provenance Neutralizer
+### Anti AI Detector Genjutsu & Lossless Provenance Neutralizer
 
 <p align="center">
   <img src="assets/sharingan_eye.svg" width="160" height="160" alt="Sharingan Mangekyou Eye" />

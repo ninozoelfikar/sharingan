@@ -1,4 +1,4 @@
-//! SHARINGAN — Anti AI Detector in Pure Rust
+//! SHARINGAN — Anti AI Detector Genjutsu in Pure Rust
 //! Author: Nino Zulfikar
 //! License: MIT
 

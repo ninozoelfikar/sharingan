@@ -135,7 +135,7 @@ class SharinganHTTPHandler(SimpleHTTPRequestHandler):
 def run_server(host: str = "127.0.0.1", port: int = 5050):
     server = ThreadedHTTPServer((host, port), SharinganHTTPHandler)
     print(f"\n=======================================================")
-    print(f"  SHARINGAN • Anti AI Detector")
+    print(f"  SHARINGAN • Anti AI Detector Genjutsu")
     print(f"  Local Server active at: http://{host}:{port}")
     print(f"  Press Ctrl+C to terminate.")
     print(f"=======================================================\n")
@@ -177,7 +177,7 @@ def run_cli(input_path: str, preset: str, output_path: Optional[str]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SHARINGAN — Anti AI Detector")
+    parser = argparse.ArgumentParser(description="SHARINGAN — Anti AI Detector Genjutsu")
     parser.add_argument("--serve", action="store_true", help="Launch local web application UI")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Binding host (default: 127.0.0.1 for security)")
     parser.add_argument("--port", type=int, default=5050, help="Web server port (default: 5050)")
