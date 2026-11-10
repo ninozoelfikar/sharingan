@@ -210,38 +210,110 @@
       box-shadow: 0 0 28px rgba(255, 30, 66, 0.2);
     }
 
-    /* Dynamic Sharingan Eye Vector */
-    .sharingan-eye-container {
-      width: 110px;
-      height: 110px;
-      margin: 0 auto 18px;
-      position: relative;
+    /* Upload Portal Graphic */
+    .portal-upload-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: rgba(255, 30, 66, 0.08);
+      border: 1px solid rgba(255, 30, 66, 0.25);
       display: flex;
       align-items: center;
       justify-content: center;
+      color: var(--crimson);
+      transition: all 0.25s ease;
     }
 
-    .sharingan-svg {
+    .portal-zone:hover .portal-upload-icon {
+      background: rgba(255, 30, 66, 0.18);
+      border-color: var(--crimson);
+      color: #fff;
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 30, 66, 0.4);
+    }
+
+    /* Genjutsu Activation Loading Overlay (Mangekyou Awakening) */
+    .genjutsu-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(5, 5, 8, 0.88);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .genjutsu-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .genjutsu-modal {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 460px;
+      padding: 32px 24px;
+    }
+
+    .genjutsu-eye-wrap {
+      width: 140px;
+      height: 140px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .genjutsu-eye-spin {
       width: 100%;
       height: 100%;
-      filter: drop-shadow(0 0 16px var(--crimson));
-      animation: sharingan-spin 14s infinite linear;
+      filter: drop-shadow(0 0 32px var(--crimson));
+      animation: genjutsu-hyper-spin 1.8s infinite linear;
       transform-origin: center center;
     }
 
-    .portal-zone:hover .sharingan-svg {
-      animation: sharingan-hyper-spin 2.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes sharingan-spin {
+    @keyframes genjutsu-hyper-spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
 
-    @keyframes sharingan-hyper-spin {
-      0% { transform: rotate(0deg) scale(1); }
-      50% { transform: rotate(540deg) scale(1.08); }
-      100% { transform: rotate(1080deg) scale(1); }
+    .genjutsu-title {
+      font-family: 'Shojumaru', var(--font);
+      font-size: 22px;
+      letter-spacing: 3px;
+      color: #ffffff;
+      text-shadow: 0 0 18px var(--crimson-glow);
+      margin-bottom: 10px;
+    }
+
+    .genjutsu-status {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-bottom: 20px;
+    }
+
+    .genjutsu-progress-bar {
+      width: 260px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .genjutsu-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff1e42, #ff4d6d);
+      box-shadow: 0 0 12px var(--crimson);
+      transition: width 0.25s ease;
     }
 
     .portal-title {
@@ -839,35 +911,40 @@
           <!-- Hidden File Input (Multiple up to 5 files) -->
           <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/webp" style="display:none">
 
-          <!-- Interactive Sharingan Dropzone -->
+          <!-- Hidden SVG Definitions for Mangekyou Sharingan -->
+          <svg style="display:none;" id="svgDefs">
+            <defs id="defs">
+              <radialGradient id="gr">
+                <stop offset="0" style="stop-color:#660000; stop-opacity: 1;" id="st1" />
+                <stop style="stop-color:#c30000; stop-opacity: 1;" offset="0.5" id="st2"/>
+                <stop style="stop-color:#a00000; stop-opacity: 1;" offset="1" id="st3"/>
+              </radialGradient>
+              <g id="sasuke-mangekyou-art">
+                <circle style="fill: url(#gr); stroke:#000; stroke-width:10;" cx="150" cy="150" r="145" id="iris" />
+                <g id="tomoe1">
+                  <path style="fill:none; stroke:#000; stroke-width: 5;" d="M200,150 C 200,215 170,275 150,295 C 130,275 100,215 100,150 C 100,85 130,25 150,5 C 170,25 200,85 200,150 z" id="tomoe1a" />
+                  <path style="fill:#000;" d="M 275,77.5 C 260,40 200,0 150,5 C 170,30 183.4,55.1 190,80 C 215,75 244.2,71.7 275,77.5 z" id="tomoe1b" />
+                  <use xlink:href="#tomoe1b" href="#tomoe1b" transform="rotate(180 150 150)" id="tomoe1c" />
+                  <path style="fill:#000;" d="M 150,41.3 C 141,56 131.5,104.2 128.6,137.6 L 150,150 171.4,137.6 C 168.5,104.2 159,56 150,41.3 z" id="path3000" />
+                </g>
+                <use xlink:href="#tomoe1" href="#tomoe1" transform="rotate(120 150 150)" id="tomoe2" />
+                <use xlink:href="#tomoe1" href="#tomoe1" transform="rotate(-120 150 150)" id="tomoe3" />
+                <circle style="fill:#a00000;" cx="150" cy="150" r="20" id="center"/>
+              </g>
+            </defs>
+          </svg>
+
+          <!-- Interactive Upload Dropzone (Clean, No Eye) -->
           <div class="portal-zone" id="portalZone">
-            <div class="sharingan-eye-container">
-              <!-- Sasuke Mangekyou Sharingan SVG (User Attachment) -->
-              <svg class="sharingan-svg" viewBox="0 0 300 300">
-                <defs id="defs">
-                  <radialGradient id="gr">
-                    <stop offset="0" style="stop-color:#660000; stop-opacity: 1;" id="st1" />
-                    <stop style="stop-color:#c30000; stop-opacity: 1;" offset="0.5" id="st2"/>
-                    <stop style="stop-color:#a00000; stop-opacity: 1;" offset="1" id="st3"/>
-                  </radialGradient>
-                  <g id="sasuke-mangekyou-art">
-                    <circle style="fill: url(#gr); stroke:#000; stroke-width:10;" cx="150" cy="150" r="145" id="iris" />
-                    <g id="tomoe1">
-                      <path style="fill:none; stroke:#000; stroke-width: 5;" d="M200,150 C 200,215 170,275 150,295 C 130,275 100,215 100,150 C 100,85 130,25 150,5 C 170,25 200,85 200,150 z" id="tomoe1a" />
-                      <path style="fill:#000;" d="M 275,77.5 C 260,40 200,0 150,5 C 170,30 183.4,55.1 190,80 C 215,75 244.2,71.7 275,77.5 z" id="tomoe1b" />
-                      <use xlink:href="#tomoe1b" href="#tomoe1b" transform="rotate(180 150 150)" id="tomoe1c" />
-                      <path style="fill:#000;" d="M 150,41.3 C 141,56 131.5,104.2 128.6,137.6 L 150,150 171.4,137.6 C 168.5,104.2 159,56 150,41.3 z" id="path3000" />
-                    </g>
-                    <use xlink:href="#tomoe1" href="#tomoe1" transform="rotate(120 150 150)" id="tomoe2" />
-                    <use xlink:href="#tomoe1" href="#tomoe1" transform="rotate(-120 150 150)" id="tomoe3" />
-                    <circle style="fill:#a00000;" cx="150" cy="150" r="20" id="center"/>
-                  </g>
-                </defs>
-                <use href="#sasuke-mangekyou-art" xlink:href="#sasuke-mangekyou-art" />
+            <div class="portal-upload-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
             </div>
 
-            <h3 class="portal-title">Drop up to 5 AI Images into the Sharingan Eye</h3>
+            <h3 class="portal-title">Drop up to 5 AI Images Here</h3>
             <p class="portal-sub">Supports PNG (C2PA, caBX, prompts), JPG (APP11 JUMBF), and WebP.<br>Batch cloaks up to 5 files losslessly.</p>
           </div>
 
@@ -1073,7 +1150,143 @@
       terminalBoxEl.innerHTML = '';
     }
 
-    function handleFilesSelected(files) {
+    async function inspectImageClientSide(file) {
+      const buffer = await file.slice(0, 131072).arrayBuffer(); // Read first 128 KB
+      const bytes = new Uint8Array(buffer);
+      const sizeBytes = file.size;
+      const sizeFormatted = (sizeBytes / (1024 * 1024)).toFixed(2) + ' MB';
+
+      let format = 'UNKNOWN';
+      let width = 0;
+      let height = 0;
+      let detectedMarkers = [];
+
+      // 1. PNG inspection
+      if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+        format = 'PNG';
+        let idx = 8;
+        const view = new DataView(buffer);
+        while (idx + 8 <= bytes.length) {
+          const length = view.getUint32(idx, false);
+          const type = String.fromCharCode(bytes[idx+4], bytes[idx+5], bytes[idx+6], bytes[idx+7]);
+
+          if (type === 'IHDR' && idx + 8 + 8 <= bytes.length) {
+            width = view.getUint32(idx + 8, false);
+            height = view.getUint32(idx + 12, false);
+          }
+
+          if (type === 'caBX') {
+            detectedMarkers.push({
+              tag: 'caBX',
+              type: 'C2PA JUMBF Manifest Chunk'
+            });
+          }
+
+          if (type === 'tEXt' || type === 'zTXt' || type === 'iTXt') {
+            const chunkEnd = Math.min(idx + 8 + length, bytes.length);
+            let str = '';
+            for (let i = idx + 8; i < chunkEnd; i++) {
+              str += String.fromCharCode(bytes[i]);
+            }
+            const lower = str.toLowerCase();
+            const keywords = ['c2pa', 'trainedalgorithmicmedia', 'midjourney', 'stablediffusion', 'prompt', 'parameters', 'novelai', 'dall-e'];
+            for (const kw of keywords) {
+              if (lower.includes(kw)) {
+                detectedMarkers.push({
+                  tag: type,
+                  type: `Synthetic AI Keyword '${kw}'`
+                });
+                break;
+              }
+            }
+          }
+
+          if (type === 'IDAT') break;
+          idx += 12 + length;
+        }
+      }
+      // 2. JPEG inspection
+      else if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xD8) {
+        format = 'JPEG';
+        let idx = 2;
+        const view = new DataView(buffer);
+        while (idx + 4 <= bytes.length) {
+          if (bytes[idx] !== 0xFF) break;
+          const marker = bytes[idx + 1];
+          if (marker === 0xD9 || marker === 0xDA) break;
+          const segLen = view.getUint16(idx + 2, false);
+
+          if (marker === 0xEB) {
+            detectedMarkers.push({
+              tag: 'APP11',
+              type: 'C2PA JUMBF Segment'
+            });
+          }
+
+          if (marker === 0xE1) {
+            const segEnd = Math.min(idx + 2 + segLen, bytes.length);
+            let str = '';
+            for (let i = idx + 4; i < segEnd; i++) {
+              str += String.fromCharCode(bytes[i]);
+            }
+            const lower = str.toLowerCase();
+            if (lower.includes('trainedalgorithmicmedia') || lower.includes('c2pa') || lower.includes('midjourney') || lower.includes('stablediffusion')) {
+              detectedMarkers.push({
+                tag: 'APP1 (XMP)',
+                type: 'AI Provenance Manifest'
+              });
+            }
+          }
+
+          if ((marker === 0xC0 || marker === 0xC2) && idx + 9 <= bytes.length) {
+            height = view.getUint16(idx + 5, false);
+            width = view.getUint16(idx + 7, false);
+          }
+
+          idx += 2 + segLen;
+        }
+      }
+      // 3. WebP inspection
+      else if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+               bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+        format = 'WEBP';
+        let str = '';
+        for (let i = 0; i < bytes.length; i++) {
+          str += String.fromCharCode(bytes[i]);
+        }
+        const lower = str.toLowerCase();
+        if (lower.includes('c2pa') || lower.includes('trainedalgorithmicmedia') || lower.includes('prompt') || lower.includes('midjourney')) {
+          detectedMarkers.push({
+            tag: 'RIFF/XMP',
+            type: 'AI Metadata Manifest'
+          });
+        }
+      }
+
+      // Fallback for dimensions
+      if (width === 0 || height === 0) {
+        try {
+          const dim = await new Promise((res) => {
+            const img = new Image();
+            img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+            img.onerror = () => res({ w: 0, h: 0 });
+            img.src = URL.createObjectURL(file);
+          });
+          width = dim.w;
+          height = dim.h;
+        } catch (e) {}
+      }
+
+      return {
+        format,
+        dimensions: (width > 0 && height > 0) ? `${width}x${height}` : 'Variable',
+        size_formatted: sizeFormatted,
+        is_ai_detected: detectedMarkers.length > 0,
+        detected_markers: detectedMarkers
+      };
+    }
+
+    async function handleFilesSelected(files) {
       let fileList = Array.from(files).filter(f => {
         const type = f.type.toLowerCase();
         const name = f.name.toLowerCase();
@@ -1090,17 +1303,43 @@
         fileList = fileList.slice(0, MAX_BATCH);
       }
 
+      clearTermLog();
+      appendTermLog('[BATCH]', `Loaded ${fileList.length} file(s) into Genjutsu arena.`);
+
       queuedFiles = fileList.map(f => ({
         file: f,
+        previewUrl: URL.createObjectURL(f),
         base64: null,
         info: null,
         status: 'pending'
       }));
 
-      clearTermLog();
-      appendTermLog('[BATCH]', `Loaded ${queuedFiles.length} file(s) into Genjutsu arena (Batch Limit: 5).`);
+      // Render instantly (0 delay)
       renderQueueUI();
-      processQueueInspection();
+
+      // Instant local inspection in parallel (zero network upload)
+      const t0 = performance.now();
+      await Promise.all(queuedFiles.map(async (item) => {
+        try {
+          const info = await inspectImageClientSide(item.file);
+          item.info = info;
+          item.status = info.is_ai_detected ? 'ai_found' : 'clean';
+          if (info.is_ai_detected) {
+            info.detected_markers.forEach(m => {
+              appendTermLog('[DETECTED]', `'${item.file.name}': ${m.tag} (${m.type})`, '#f87171');
+            });
+          } else {
+            appendTermLog('[CLEAN]', `'${item.file.name}': 0 synthetic markers found.`, '#34d399');
+          }
+        } catch (err) {
+          item.status = 'clean';
+          appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${err.message}`, '#f87171');
+        }
+      }));
+
+      const elapsed = (performance.now() - t0).toFixed(1);
+      renderQueueUI();
+      appendTermLog('[STATUS]', `Inspected ${queuedFiles.length} file(s) locally in ${elapsed}ms (0 network upload). Ready for activation.`, '#34d399');
     }
 
     function escapeHtml(str) {
@@ -1168,8 +1407,9 @@
           badgeBg = isAi ? '#ef4444' : '#10b981';
         }
 
-        const thumbHtml = item.base64
-          ? `<img src="${item.base64}">`
+        const thumbSrc = item.previewUrl || item.base64;
+        const thumbHtml = thumbSrc
+          ? `<img src="${thumbSrc}">`
           : `<div style="width:100%; height:100%; background: #1c1c24; display:flex; align-items:center; justify-content:center;">
                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
              </div>`;
@@ -1241,8 +1481,9 @@
                   badgeText = isAi ? 'AI FOUND' : 'CLEAN';
                 }
 
-                const thumbHtml = item.base64
-                  ? `<img src="${item.base64}">`
+                const thumbSrc = item.previewUrl || item.base64;
+                const thumbHtml = thumbSrc
+                  ? `<img src="${thumbSrc}">`
                   : `<div style="width:100%;height:100%;background:#1c1c24;display:flex;align-items:center;justify-content:center;">
                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                      </div>`;
@@ -1274,83 +1515,21 @@
       }
     }
 
-    let isInspecting = false;
-    async function processQueueInspection() {
-      if (isInspecting) return;
-      isInspecting = true;
-      try {
-        while (true) {
-          const item = queuedFiles.find(f => !f.info && f.status === 'pending');
-          if (!item) break;
-
-          item.status = 'scanning';
-          if (!item.base64) {
-            try {
-              item.base64 = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(item.file);
-              });
-            } catch (readErr) {
-              item.status = 'error';
-              appendTermLog('[ERROR]', `Failed reading '${item.file.name}': ${readErr.message}`, '#ef4444');
-              renderQueueUI();
-              continue;
-            }
-          }
-
-          // Update thumbnail immediately in UI
-          renderQueueUI();
-
-          try {
-            appendTermLog('[SCAN]', `Disassembling '${item.file.name}'...`);
-            const resp = await fetch('api/inspect', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ file: item.base64, filename: item.file.name })
-            });
-            const res = await resp.json();
-
-            if (res.success && res.data) {
-              item.info = res.data;
-              const isAi = res.data.is_ai_detected;
-              item.status = isAi ? 'ai_found' : 'clean';
-              renderQueueUI();
-
-              if (isAi) {
-                item.info.detected_markers.forEach(m => {
-                  appendTermLog('[DETECTED]', `'${item.file.name}': ${m.tag} (${m.type})`, '#f87171');
-                });
-              } else {
-                appendTermLog('[CLEAN]', `'${item.file.name}': 0 synthetic markers found.`, '#34d399');
-              }
-            } else {
-              item.status = 'error';
-              appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${res.error || 'Unknown error'}`, '#ef4444');
-              renderQueueUI();
-            }
-          } catch (err) {
-            item.status = 'error';
-            appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${err.message}`, '#ef4444');
-            renderQueueUI();
-          }
-        }
-      } finally {
-        isInspecting = false;
-      }
-      if (queuedFiles.length > 0) {
-        appendTermLog('[STATUS]', `Inspection complete for ${queuedFiles.length} file(s). Ready for Genjutsu activation.`, '#34d399');
-      }
-    }
-
-    // Activate Button Handler (Sequential Batch Execution)
+    // Activate Button Handler (Awakens Mangekyou Loading Screen)
     btnActivate.addEventListener('click', async () => {
       if (queuedFiles.length === 0) {
-        alert('Please drop or select up to 5 images into the Sharingan eye first!');
+        alert('Please drop or select up to 5 images into the Genjutsu arena first!');
         fileInput.click();
         return;
       }
+
+      // Show Genjutsu Overlay (The rotating eye loading screen)
+      const overlay = document.getElementById('genjutsuOverlay');
+      const genjutsuStatus = document.getElementById('genjutsuStatus');
+      const genjutsuFill = document.getElementById('genjutsuFill');
+      overlay.classList.add('active');
+      genjutsuFill.style.width = '0%';
+      genjutsuStatus.textContent = `Awakening Mangekyou... Cloaking ${queuedFiles.length} file(s)...`;
 
       btnActivate.style.pointerEvents = 'none';
       btnActivate.style.filter = 'brightness(1.2)';
@@ -1369,7 +1548,19 @@
           badge.className = 'batch-item-badge badge-pending';
         }
 
+        genjutsuStatus.textContent = `[${i + 1}/${queuedFiles.length}] Cloaking '${item.file.name}' with ${selectedPreset}...`;
+        genjutsuFill.style.width = `${((i) / queuedFiles.length) * 100}%`;
         appendTermLog('[JUTSU]', `[${i + 1}/${queuedFiles.length}] Cloaking '${item.file.name}'...`, '#a78bfa');
+
+        // Read base64 only if not yet read
+        if (!item.base64) {
+          item.base64 = await new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result);
+            reader.onerror = rej;
+            reader.readAsDataURL(item.file);
+          });
+        }
 
         try {
           const resp = await fetch('api/sanitize', {
@@ -1402,7 +1593,8 @@
             link.click();
             document.body.removeChild(link);
 
-            // 350ms delay between files to prevent browser download popup blocking
+            genjutsuFill.style.width = `${((i + 1) / queuedFiles.length) * 100}%`;
+
             if (i < queuedFiles.length - 1) {
               await new Promise(r => setTimeout(r, 350));
             }
@@ -1426,11 +1618,35 @@
         renderQueueUI();
       }
 
+      genjutsuStatus.textContent = `Genjutsu Complete! ${successCount}/${queuedFiles.length} file(s) disguised.`;
+      genjutsuFill.style.width = '100%';
+
+      // Smoothly hide overlay after completion
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 500);
+
       appendTermLog('[ALL COMPLETE]', `Batch Genjutsu finished! ${successCount}/${queuedFiles.length} file(s) cloaked bit-for-bit.`, '#10b981');
       btnActivate.style.pointerEvents = 'auto';
       btnActivate.style.filter = '';
       btnActivateText.textContent = queuedFiles.length > 1 ? `Activate (${queuedFiles.length} Files)` : 'Activate';
     });
   </script>
+
+  <!-- Genjutsu Activation Loading Overlay -->
+  <div class="genjutsu-overlay" id="genjutsuOverlay">
+    <div class="genjutsu-modal">
+      <div class="genjutsu-eye-wrap">
+        <svg class="genjutsu-eye-spin" viewBox="0 0 300 300">
+          <use href="#sasuke-mangekyou-art" xlink:href="#sasuke-mangekyou-art" />
+        </svg>
+      </div>
+      <div class="genjutsu-title">CASTING SHARINGAN GENJUTSU</div>
+      <div class="genjutsu-status" id="genjutsuStatus">Cloaking AI metadata into camera disguise...</div>
+      <div class="genjutsu-progress-bar">
+        <div class="genjutsu-progress-fill" id="genjutsuFill"></div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
