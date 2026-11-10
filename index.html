@@ -297,11 +297,25 @@
       position: relative;
       z-index: 2;
       filter: drop-shadow(0 0 22px rgba(255, 30, 66, 0.55));
-      animation: genjutsu-hyper-spin 2s infinite linear;
       transform-origin: center center;
     }
 
-    @keyframes genjutsu-hyper-spin {
+    /* Fase 1: Percepatan Sangat Tinggi (Mulai pelan lalu melesat kencang) */
+    .genjutsu-eye-spin.spin-accel {
+      animation: mangekyou-spin-accel 1.15s cubic-bezier(0.65, 0, 0.85, 0.15) forwards;
+    }
+
+    @keyframes mangekyou-spin-accel {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(1800deg); }
+    }
+
+    /* Fase 2: Putaran Maksimal Berkelanjutan (Top-Speed Hyper Loop) */
+    .genjutsu-eye-spin.spin-loop {
+      animation: mangekyou-hyper-loop 0.18s linear infinite;
+    }
+
+    @keyframes mangekyou-hyper-loop {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
@@ -1775,7 +1789,23 @@
 
       // Show Minimalist Genjutsu Overlay (The rotating eye with dim ambient halo, NO text)
       const overlay = document.getElementById('genjutsuOverlay');
+      const eye = document.querySelector('.genjutsu-eye-spin');
+      if (eye) {
+        eye.classList.remove('spin-loop');
+        eye.classList.remove('spin-accel');
+        void eye.offsetWidth; // reset reflow
+        eye.classList.add('spin-accel');
+
+        eye.onanimationend = (e) => {
+          if (e.animationName === 'mangekyou-spin-accel') {
+            eye.classList.remove('spin-accel');
+            void eye.offsetWidth;
+            eye.classList.add('spin-loop');
+          }
+        };
+      }
       overlay.classList.add('active');
+      const activationStartTime = performance.now();
 
       btnActivate.style.pointerEvents = 'none';
       btnActivate.style.filter = 'brightness(1.2)';
@@ -1850,10 +1880,17 @@
         renderQueueUI();
       }
 
-      // Smoothly hide loading overlay once all ready
+      // Berikan durasi minimum agar kurva percepatan terlihat utuh dramatis
+      const elapsed = performance.now() - activationStartTime;
+      const minDisplayMs = 1200;
+      const remainingDelay = Math.max(0, minDisplayMs - elapsed);
+
       setTimeout(() => {
         overlay.classList.remove('active');
-      }, 400);
+        if (eye) {
+          eye.classList.remove('spin-accel', 'spin-loop');
+        }
+      }, remainingDelay + 300);
 
       appendTermLog('[ALL COMPLETE]', `Genjutsu selesai! ${successCount}/${queuedFiles.length} file berhasil disamarkan bit-for-bit.`, '#10b981');
       btnActivate.style.pointerEvents = 'auto';
