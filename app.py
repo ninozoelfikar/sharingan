@@ -36,6 +36,18 @@ class SharinganHTTPHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(PROJECT_DIR), **kwargs)
 
+    def do_GET(self):
+        clean_path = self.path.split('?')[0].rstrip('/')
+        if clean_path in ('', '/', '/index.html', '/sharingan', '/sharingan/index.html'):
+            self.path = '/index.html'
+            super().do_GET()
+        elif clean_path.startswith('/assets/') or clean_path.startswith('/sharingan/assets/'):
+            if clean_path.startswith('/sharingan/assets/'):
+                self.path = clean_path.replace('/sharingan/assets/', '/assets/', 1)
+            super().do_GET()
+        else:
+            self.send_error(404, "File not found")
+
     def do_POST(self):
         clean_path = self.path.split('?')[0].rstrip('/')
         if clean_path.endswith('/api/inspect'):
@@ -123,7 +135,7 @@ class SharinganHTTPHandler(SimpleHTTPRequestHandler):
 def run_server(host: str = "127.0.0.1", port: int = 5050):
     server = ThreadedHTTPServer((host, port), SharinganHTTPHandler)
     print(f"\n=======================================================")
-    print(f"  SHARINGAN • AI Metadata Genjutsu Cloaker")
+    print(f"  SHARINGAN • Anti AI Detector")
     print(f"  Local Server active at: http://{host}:{port}")
     print(f"  Press Ctrl+C to terminate.")
     print(f"=======================================================\n")
@@ -165,7 +177,7 @@ def run_cli(input_path: str, preset: str, output_path: Optional[str]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SHARINGAN — AI Metadata Genjutsu Cloaker")
+    parser = argparse.ArgumentParser(description="SHARINGAN — Anti AI Detector")
     parser.add_argument("--serve", action="store_true", help="Launch local web application UI")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Binding host (default: 127.0.0.1 for security)")
     parser.add_argument("--port", type=int, default=5050, help="Web server port (default: 5050)")

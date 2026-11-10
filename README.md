@@ -1,5 +1,5 @@
 # 🔴 SHARINGAN (写輪眼)
-### AI Metadata Genjutsu Cloaker & Lossless Provenance Neutralizer
+### Anti AI Detector & Lossless Provenance Neutralizer
 
 <p align="center">
   <img src="assets/sharingan_eye.svg" width="160" height="160" alt="Sharingan Mangekyou Eye" />
@@ -85,6 +85,34 @@ python3 app.py -i input.png -p iphone_15_pro -o clean.png
 # Tsukuyomi Void (100% Purged)
 python3 app.py -i input.png -p tsukuyomi_void -o void.png
 ```
+
+---
+
+## 🦀 Rust Native & WebAssembly (Wasm) Engine
+
+This branch features the pure-Rust implementation with **zero external dependencies**:
+
+### 1. Build and Run Native Binary:
+```bash
+# Compile optimized release binary
+cargo build --release
+
+# Run embedded high-speed Web UI
+./target/release/sharingan-cli --serve --port 5050
+
+# Or sanitize directly from terminal:
+./target/release/sharingan-cli -i portrait.png -p canon_r5 -o clean.png
+```
+
+### 2. Compile to WebAssembly (In-Browser Execution):
+```bash
+# Add WebAssembly target
+rustup target add wasm32-unknown-unknown
+
+# Compile to ultra-compact WASM (~39 KB)
+cargo build --target wasm32-unknown-unknown --release
+```
+The resulting `target/wasm32-unknown-unknown/release/sharingan.wasm` (and `assets/sharingan.wasm`) runs directly inside modern web browsers with 0 server round-trips!
 
 ---
 
