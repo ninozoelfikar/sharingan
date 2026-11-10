@@ -134,7 +134,7 @@ fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
         } else {
             send_response(&mut stream, 400, "application/json", b"{\"error\":\"Missing file field\"}");
         }
-    } else if method == "GET" {
+    } else if method == "GET" || method == "HEAD" {
         // Serve static files with strict Anti-Path-Traversal protection
         let req_path = if raw_path == "/" || raw_path.is_empty() || raw_path == "/sharingan" || raw_path == "/sharingan/" {
             "index.html"
@@ -160,7 +160,11 @@ fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
                         "json" => "application/json",
                         _ => "application/octet-stream",
                     };
-                    send_response(&mut stream, 200, content_type, &bytes);
+                    if method == "HEAD" {
+                        send_response_header_only(&mut stream, 200, content_type, bytes.len());
+                    } else {
+                        send_response(&mut stream, 200, content_type, &bytes);
+                    }
                     return;
                 }
             }
@@ -189,6 +193,26 @@ fn send_response(stream: &mut TcpStream, status: u16, content_type: &str, body: 
 
     let _ = stream.write_all(header.as_bytes());
     let _ = stream.write_all(body);
+    let _ = stream.flush();
+}
+
+fn send_response_header_only(stream: &mut TcpStream, status: u16, content_type: &str, content_length: usize) {
+    let status_line = match status {
+        200 => "HTTP/1.1 200 OK",
+        400 => "HTTP/1.1 400 Bad Request",
+        403 => "HTTP/1.1 403 Forbidden",
+        404 => "HTTP/1.1 404 Not Found",
+        405 => "HTTP/1.1 405 Method Not Allowed",
+        413 => "HTTP/1.1 413 Payload Too Large",
+        _ => "HTTP/1.1 500 Internal Server Error",
+    };
+
+    let header = format!(
+        "{}\r\nContent-Type: {}\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n",
+        status_line, content_type, content_length
+    );
+
+    let _ = stream.write_all(header.as_bytes());
     let _ = stream.flush();
 }
 
@@ -302,10 +326,10 @@ fn decode_base64(input: &str) -> Vec<u8> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let project_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
 
     let mut serve = false;
     let mut port = 5050u16;
+    let mut custom_dir = None;
     let mut input_file = None;
     let mut output_file = None;
     let mut preset = "canon_r5".to_string();
@@ -317,6 +341,12 @@ fn main() {
             "--port" => {
                 if i + 1 < args.len() {
                     port = args[i + 1].parse().unwrap_or(5050);
+                    i += 1;
+                }
+            }
+            "--dir" => {
+                if i + 1 < args.len() {
+                    custom_dir = Some(args[i + 1].clone());
                     i += 1;
                 }
             }
@@ -341,7 +371,7 @@ fn main() {
             "--help" | "-h" => {
                 println!("SHARINGAN (写輪眼) — Anti AI Detector in Rust");
                 println!("\nUsage:");
-                println!("  sharingan --serve [--port <port>]    Launch embedded high-speed Web UI");
+                println!("  sharingan --serve [--port <port>] [--dir <path>] Launch embedded high-speed Web UI");
                 println!("  sharingan -i <input> [-p <preset>] [-o <output>]  Sanitize image via CLI");
                 println!("\nPresets:");
                 println!("  canon_r5       Canon EOS R5 Studio Master (Default)");
@@ -354,6 +384,33 @@ fn main() {
         }
         i += 1;
     }
+
+    let project_dir = if let Some(d) = custom_dir {
+        PathBuf::from(d)
+    } else {
+        let current = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        if current.join("index.html").exists() {
+            current
+        } else if let Ok(exe) = env::current_exe() {
+            if let Some(parent) = exe.parent() {
+                if parent.join("index.html").exists() {
+                    parent.to_path_buf()
+                } else if let Some(grand) = parent.parent().and_then(|p| p.parent()) {
+                    if grand.join("index.html").exists() {
+                        grand.to_path_buf()
+                    } else {
+                        current
+                    }
+                } else {
+                    current
+                }
+            } else {
+                current
+            }
+        } else {
+            current
+        }
+    };
 
     if serve || (input_file.is_none() && args.len() == 1) {
         let addr = format!("127.0.0.1:{}", port);
