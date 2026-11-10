@@ -1,0 +1,16 @@
+[package]
+name = "sharingan"
+version = "1.0.0"
+edition = "2021"
+authors = ["Nino Zulfikar <ninozoelfikar@gmail.com>"]
+description = "SHARINGAN — Anti AI Detector & Lossless Provenance Neutralizer in Rust"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "sharingan-cli"
+path = "src/main.rs"
+
+[dependencies]
