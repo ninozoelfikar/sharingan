@@ -1,4 +1,4 @@
-//! SHARINGAN — AI Metadata Genjutsu Cloaker in Pure Rust
+//! SHARINGAN — Anti AI Detector in Pure Rust
 //! Author: Nino Zulfikar
 //! License: MIT
 

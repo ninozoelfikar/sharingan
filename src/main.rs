@@ -339,7 +339,7 @@ fn main() {
                 }
             }
             "--help" | "-h" => {
-                println!("SHARINGAN (写輪眼) — AI Metadata Genjutsu Cloaker in Rust");
+                println!("SHARINGAN (写輪眼) — Anti AI Detector in Rust");
                 println!("\nUsage:");
                 println!("  sharingan --serve [--port <port>]    Launch embedded high-speed Web UI");
                 println!("  sharingan -i <input> [-p <preset>] [-o <output>]  Sanitize image via CLI");

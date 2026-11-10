@@ -3,7 +3,7 @@ name = "sharingan"
 version = "1.0.0"
 edition = "2021"
 authors = ["Nino Zulfikar <ninozoelfikar@gmail.com>"]
-description = "SHARINGAN — AI Metadata Genjutsu Cloaker & Lossless Provenance Neutralizer in Rust"
+description = "SHARINGAN — Anti AI Detector & Lossless Provenance Neutralizer in Rust"
 license = "MIT"
 
 [lib]
