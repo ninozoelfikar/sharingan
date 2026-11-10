@@ -8,12 +8,23 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::thread;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::{Instant, Duration};
 
 use sharingan::{inspect_image, sanitize_image};
 
 const MAX_PAYLOAD_SIZE: usize = 25 * 1024 * 1024; // 25 MB limit
 
-fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
+struct StagedFile {
+    filename: String,
+    data: Vec<u8>,
+    created_at: Instant,
+}
+
+type StagingStore = Arc<Mutex<HashMap<String, StagedFile>>>;
+
+fn handle_client(mut stream: TcpStream, project_dir: PathBuf, staging: StagingStore) {
     let mut buffer = Vec::new();
     let mut temp = [0u8; 8192];
 
@@ -68,7 +79,56 @@ fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
     let method = parts[0];
     let raw_path = parts[1].split('?').next().unwrap_or("/");
 
-    if method == "POST" && (raw_path.ends_with("/api/inspect") || raw_path == "/api/inspect") {
+    if method == "POST" && (raw_path.ends_with("/api/stage") || raw_path == "/api/stage") {
+        let body = &buffer[header_end..];
+        let body_str = String::from_utf8_lossy(body);
+        let filename = extract_json_field(&body_str, "filename").unwrap_or_else(|| "upload.png".to_string());
+
+        if let Some(b64) = extract_json_field(&body_str, "file") {
+            let clean_b64 = if let Some(comma_pos) = b64.find(',') {
+                &b64[comma_pos + 1..]
+            } else {
+                &b64
+            };
+
+            let decoded = decode_base64(clean_b64);
+            let info = inspect_image(&decoded);
+
+            use std::sync::atomic::{AtomicU64, Ordering};
+            static COUNTER: AtomicU64 = AtomicU64::new(1);
+            let count = COUNTER.fetch_add(1, Ordering::Relaxed);
+            let file_id = format!("fid_{:x}_{:x}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis(), count);
+
+            {
+                let mut store = staging.lock().unwrap();
+                let now = Instant::now();
+                store.retain(|_, v| now.duration_since(v.created_at) < Duration::from_secs(900));
+                store.insert(file_id.clone(), StagedFile {
+                    filename: filename.clone(),
+                    data: decoded,
+                    created_at: now,
+                });
+            }
+
+            let resp_json = format!(
+                r#"{{"success":true,"file_id":"{}","filename":"{}","data":{{"format":"{}","size_bytes":{},"size_formatted":"{}","width":{},"height":{},"dimensions":"{}","is_ai_detected":{},"detected_markers":{},"summary":"{}"}}}}"#,
+                file_id,
+                filename,
+                info.format,
+                info.size_bytes,
+                format_size(info.size_bytes),
+                info.width,
+                info.height,
+                info.dimensions,
+                info.is_ai_detected,
+                markers_to_json(&info.detected_markers),
+                info.summary
+            );
+            send_response(&mut stream, 200, "application/json", resp_json.as_bytes());
+        } else {
+            send_response(&mut stream, 400, "application/json", b"{\"error\":\"Missing file field\"}");
+        }
+    } else if method == "POST" && (raw_path.ends_with("/api/inspect") || raw_path == "/api/inspect") {
         let body = &buffer[header_end..];
         let body_str = String::from_utf8_lossy(body);
 
@@ -105,34 +165,45 @@ fn handle_client(mut stream: TcpStream, project_dir: PathBuf) {
 
         let preset = extract_json_field(&body_str, "preset").unwrap_or_else(|| "canon_r5".to_string());
         let filename = extract_json_field(&body_str, "filename").unwrap_or_else(|| "image.png".to_string());
+        let file_id = extract_json_field(&body_str, "file_id");
 
-        if let Some(b64) = extract_json_field(&body_str, "file") {
+        let staged_data = if let Some(fid) = file_id {
+            let store = staging.lock().unwrap();
+            store.get(&fid).map(|s| (s.data.clone(), s.filename.clone()))
+        } else {
+            None
+        };
+
+        let (raw_bytes, target_filename) = if let Some((data, fname)) = staged_data {
+            (data, fname)
+        } else if let Some(b64) = extract_json_field(&body_str, "file") {
             let clean_b64 = if let Some(comma_pos) = b64.find(',') {
                 &b64[comma_pos + 1..]
             } else {
                 &b64
             };
-
-            let decoded = decode_base64(clean_b64);
-            match sanitize_image(&decoded, &preset) {
-                Ok(cleaned) => {
-                    let cleaned_b64 = encode_base64(&cleaned);
-                    let delta = (cleaned.len() as isize) - (decoded.len() as isize);
-                    let out_name = format!("sanitized_{}", filename);
-
-                    let resp_json = format!(
-                        r#"{{"success":true,"filename":"{}","file":"{}","original_size":{},"cleaned_size":{},"delta_bytes":{},"preset":"{}"}}"#,
-                        out_name, cleaned_b64, decoded.len(), cleaned.len(), delta, preset
-                    );
-                    send_response(&mut stream, 200, "application/json", resp_json.as_bytes());
-                }
-                Err(e) => {
-                    let err_json = format!(r#"{{"success":false,"error":"{}"}}"#, e);
-                    send_response(&mut stream, 500, "application/json", err_json.as_bytes());
-                }
-            }
+            (decode_base64(clean_b64), filename)
         } else {
-            send_response(&mut stream, 400, "application/json", b"{\"error\":\"Missing file field\"}");
+            send_response(&mut stream, 400, "application/json", b"{\"error\":\"Missing file or file_id field\"}");
+            return;
+        };
+
+        match sanitize_image(&raw_bytes, &preset) {
+            Ok(cleaned) => {
+                let cleaned_b64 = encode_base64(&cleaned);
+                let delta = (cleaned.len() as isize) - (raw_bytes.len() as isize);
+                let out_name = format!("sanitized_{}", target_filename);
+
+                let resp_json = format!(
+                    r#"{{"success":true,"filename":"{}","file":"{}","original_size":{},"cleaned_size":{},"delta_bytes":{},"preset":"{}"}}"#,
+                    out_name, cleaned_b64, raw_bytes.len(), cleaned.len(), delta, preset
+                );
+                send_response(&mut stream, 200, "application/json", resp_json.as_bytes());
+            }
+            Err(e) => {
+                let err_json = format!(r#"{{"success":false,"error":"{}"}}"#, e);
+                send_response(&mut stream, 500, "application/json", err_json.as_bytes());
+            }
         }
     } else if method == "GET" || method == "HEAD" {
         // Serve static files with strict Anti-Path-Traversal protection
@@ -413,6 +484,7 @@ fn main() {
     };
 
     if serve || (input_file.is_none() && args.len() == 1) {
+        let staging: StagingStore = Arc::new(Mutex::new(HashMap::new()));
         let addr = format!("127.0.0.1:{}", port);
         let listener = TcpListener::bind(&addr).expect("Failed to bind TCP listener");
         println!("=======================================================");
@@ -424,8 +496,9 @@ fn main() {
         for stream in listener.incoming() {
             if let Ok(stream) = stream {
                 let p_dir = project_dir.clone();
+                let st_clone = staging.clone();
                 thread::spawn(move || {
-                    handle_client(stream, p_dir);
+                    handle_client(stream, p_dir, st_clone);
                 });
             }
         }

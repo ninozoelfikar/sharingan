@@ -233,7 +233,7 @@
       box-shadow: 0 0 20px rgba(255, 30, 66, 0.4);
     }
 
-    /* Genjutsu Activation Loading Overlay (Mangekyou Awakening) */
+    /* Genjutsu Activation Loading Overlay (Minimalist Mangekyou with Dim Ambient Halo) */
     .genjutsu-overlay {
       position: fixed;
       inset: 0;
@@ -241,12 +241,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      background: rgba(5, 5, 8, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(4, 4, 7, 0.93);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.35s ease;
     }
 
     .genjutsu-overlay.active {
@@ -255,65 +255,55 @@
     }
 
     .genjutsu-modal {
-      text-align: center;
+      position: relative;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      max-width: 460px;
-      padding: 32px 24px;
+      justify-content: center;
     }
 
-    .genjutsu-eye-wrap {
-      width: 140px;
-      height: 140px;
-      margin-bottom: 24px;
+    .genjutsu-halo-wrap {
+      width: 220px;
+      height: 220px;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Pendar merah redup di belakang mata Mangekyou */
+    .genjutsu-dim-halo {
+      position: absolute;
+      inset: -45px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 30, 66, 0.38) 0%, rgba(255, 30, 66, 0.15) 38%, rgba(255, 30, 66, 0.03) 60%, transparent 75%);
+      animation: halo-dim-breathe 3.5s infinite ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes halo-dim-breathe {
+      0%, 100% {
+        transform: scale(0.92);
+        opacity: 0.65;
+      }
+      50% {
+        transform: scale(1.10);
+        opacity: 0.95;
+      }
     }
 
     .genjutsu-eye-spin {
-      width: 100%;
-      height: 100%;
-      filter: drop-shadow(0 0 32px var(--crimson));
-      animation: genjutsu-hyper-spin 1.8s infinite linear;
+      width: 140px;
+      height: 140px;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 0 22px rgba(255, 30, 66, 0.55));
+      animation: genjutsu-hyper-spin 2s infinite linear;
       transform-origin: center center;
     }
 
     @keyframes genjutsu-hyper-spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
-    }
-
-    .genjutsu-title {
-      font-family: 'Shojumaru', var(--font);
-      font-size: 22px;
-      letter-spacing: 3px;
-      color: #ffffff;
-      text-shadow: 0 0 18px var(--crimson-glow);
-      margin-bottom: 10px;
-    }
-
-    .genjutsu-status {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      margin-bottom: 20px;
-    }
-
-    .genjutsu-progress-bar {
-      width: 260px;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 4px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .genjutsu-progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #ff1e42, #ff4d6d);
-      box-shadow: 0 0 12px var(--crimson);
-      transition: width 0.25s ease;
     }
 
     .portal-title {
@@ -525,6 +515,59 @@
       background: #059669;
       color: #fff;
       box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-uploading {
+      background: rgba(139, 92, 246, 0.25);
+      border: 1px solid rgba(139, 92, 246, 0.5);
+      color: #c4b5fd;
+    }
+
+    .badge-uploaded {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+    }
+
+    .uploaded-tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      color: #34d399;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .item-progress-wrap {
+      width: 100%;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .item-progress-track {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .item-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff1e42, #8b5cf6);
+      border-radius: 2px;
+      transition: width 0.15s ease-out;
+    }
+
+    .item-progress-text {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      min-width: 34px;
+      text-align: right;
     }
 
     .item-remove-btn {
@@ -1287,59 +1330,216 @@
     }
 
     async function handleFilesSelected(files) {
-      let fileList = Array.from(files).filter(f => {
+      const incomingList = Array.from(files).filter(f => {
         const type = f.type.toLowerCase();
         const name = f.name.toLowerCase();
         return type.startsWith('image/') || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.webp');
       });
 
-      if (fileList.length === 0) {
-        alert('Please select valid PNG, JPG, or WebP image files.');
+      if (incomingList.length === 0) {
+        alert('Harap pilih file gambar yang valid (PNG, JPG, atau WebP).');
         return;
       }
 
-      if (fileList.length > MAX_BATCH) {
-        appendTermLog('[BATCH]', `Selected ${fileList.length} files. Cap is 5. Queuing first 5 files only.`, '#f59e0b');
-        fileList = fileList.slice(0, MAX_BATCH);
+      // Validasi batas maksimum 5 file
+      if (queuedFiles.length >= MAX_BATCH) {
+        alert('Batas maksimum upload sudah penuh (maksimal 5 gambar)! Hapus salah satu gambar dari antrean jika ingin mengunggah gambar baru.');
+        return;
       }
 
-      clearTermLog();
-      appendTermLog('[BATCH]', `Loaded ${fileList.length} file(s) into Genjutsu arena.`);
+      const availableSlots = MAX_BATCH - queuedFiles.length;
+      let acceptedFiles = incomingList;
 
-      queuedFiles = fileList.map(f => ({
-        file: f,
-        previewUrl: URL.createObjectURL(f),
-        base64: null,
-        info: null,
-        status: 'pending'
-      }));
+      if (incomingList.length > availableSlots) {
+        alert(`Batas maksimum adalah 5 gambar. Hanya ${availableSlots} gambar yang ditambahkan ke antrean (total antrean: 5).`);
+        acceptedFiles = incomingList.slice(0, availableSlots);
+      }
 
-      // Render instantly (0 delay)
+      appendTermLog('[QUEUE]', `Menambahkan ${acceptedFiles.length} file ke antrean (Total: ${queuedFiles.length + acceptedFiles.length}/${MAX_BATCH}).`);
+
+      const newItems = acceptedFiles.map(f => {
+        return {
+          id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          file: f,
+          previewUrl: URL.createObjectURL(f),
+          base64: null,
+          file_id: null,
+          info: null,
+          uploadProgress: 0,
+          uploadStatus: 'uploading', // 'uploading' | 'uploaded' | 'error'
+          status: 'pending',        // 'pending' | 'ai_found' | 'clean' | 'cloaked'
+          xhr: null
+        };
+      });
+
+      // Tambahkan ke antrean yang sudah ada (Additive, tidak menggantikan)
+      queuedFiles = queuedFiles.concat(newItems);
+
+      // Render UI antrean seketika
       renderQueueUI();
 
-      // Instant local inspection in parallel (zero network upload)
-      const t0 = performance.now();
-      await Promise.all(queuedFiles.map(async (item) => {
-        try {
-          const info = await inspectImageClientSide(item.file);
-          item.info = info;
-          item.status = info.is_ai_detected ? 'ai_found' : 'clean';
-          if (info.is_ai_detected) {
-            info.detected_markers.forEach(m => {
-              appendTermLog('[DETECTED]', `'${item.file.name}': ${m.tag} (${m.type})`, '#f87171');
-            });
-          } else {
-            appendTermLog('[CLEAN]', `'${item.file.name}': 0 synthetic markers found.`, '#34d399');
+      // Mulai upload latar belakang ke memori VPS secara paralel
+      newItems.forEach(item => {
+        startBackgroundUploadAndInspect(item);
+      });
+    }
+
+    function startBackgroundUploadAndInspect(item) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        item.base64 = reader.result;
+
+        const xhr = new XMLHttpRequest();
+        item.xhr = xhr;
+        xhr.open('POST', 'api/stage', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+            item.uploadProgress = pct;
+            updateItemProgressUI(item);
           }
-        } catch (err) {
-          item.status = 'clean';
-          appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${err.message}`, '#f87171');
-        }
-      }));
+        };
 
-      const elapsed = (performance.now() - t0).toFixed(1);
-      renderQueueUI();
-      appendTermLog('[STATUS]', `Inspected ${queuedFiles.length} file(s) locally in ${elapsed}ms (0 network upload). Ready for activation.`, '#34d399');
+        xhr.onload = () => {
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (res.success && res.file_id) {
+              item.file_id = res.file_id;
+              item.uploadProgress = 100;
+              item.uploadStatus = 'uploaded';
+              item.info = res.data;
+              item.status = (res.data && res.data.is_ai_detected) ? 'ai_found' : 'clean';
+
+              if (item.info && item.info.is_ai_detected) {
+                appendTermLog('[AI DETECTED]', `'${item.file.name}': Terdeteksi ${item.info.detected_markers.length} marker AI synthetic.`, '#f87171');
+              } else {
+                appendTermLog('[CLEAN]', `'${item.file.name}': 0 marker synthetic ditemukan. Clean container.`, '#34d399');
+              }
+              appendTermLog('[UPLOADED]', `'${item.file.name}' selesai diunggah ke memori VPS (${item.info ? item.info.dimensions : ''}). Siap diaktifkan seketika.`, '#10b981');
+            } else {
+              item.uploadStatus = 'error';
+              appendTermLog('[UPLOAD ERROR]', `'${item.file.name}': ${res.error || 'Gagal menyimpan di server'}`, '#ef4444');
+            }
+          } catch (e) {
+            item.uploadStatus = 'error';
+          }
+          item.xhr = null;
+          updateItemProgressUI(item);
+        };
+
+        xhr.onerror = () => {
+          item.uploadStatus = 'error';
+          item.xhr = null;
+          updateItemProgressUI(item);
+          appendTermLog('[NETWORK ERROR]', `'${item.file.name}': Koneksi unggah terputus`, '#ef4444');
+        };
+
+        xhr.send(JSON.stringify({
+          file: item.base64,
+          filename: item.file.name
+        }));
+      };
+
+      reader.onerror = () => {
+        item.uploadStatus = 'error';
+        updateItemProgressUI(item);
+      };
+
+      reader.readAsDataURL(item.file);
+    }
+
+    function updateItemProgressUI(item) {
+      const idx = queuedFiles.indexOf(item);
+      if (idx === -1) return;
+
+      if (queuedFiles.length === 1) {
+        const wrap = document.getElementById('singleProgressWrap');
+        const fill = document.getElementById('singleProgressFill');
+        const text = document.getElementById('singleProgressText');
+        const stats = document.getElementById('fileStats');
+        const badge = document.getElementById('sealBadge');
+        const tag = document.getElementById('detectedTag');
+        const tagText = document.getElementById('detectedTagText');
+
+        if (fill) fill.style.width = `${item.uploadProgress}%`;
+        if (text) text.textContent = `${item.uploadProgress}%`;
+
+        if (item.uploadStatus === 'uploading') {
+          if (wrap) wrap.style.display = 'flex';
+          if (stats) stats.innerHTML = `Uploading to VPS (${item.uploadProgress}%) &bull; ${(item.file.size / (1024 * 1024)).toFixed(2)} MB`;
+          if (badge) {
+            badge.textContent = 'UPLOADING';
+            badge.style.background = '#8b5cf6';
+          }
+        } else if (item.uploadStatus === 'uploaded') {
+          if (wrap) wrap.style.display = 'none';
+          const isAi = item.info && item.info.is_ai_detected;
+          if (stats) {
+            stats.innerHTML = `<span class="uploaded-tag-pill">✓ UPLOADED</span> &bull; ${item.info.dimensions} &bull; ${item.info.size_formatted} &bull; ${item.info.format}`;
+          }
+          if (badge) {
+            badge.textContent = isAi ? 'AI FOUND' : 'CLEAN';
+            badge.style.background = isAi ? '#ef4444' : '#10b981';
+          }
+          if (tag && tagText) {
+            if (isAi) {
+              tag.style.background = 'rgba(220, 38, 38, 0.15)';
+              tag.style.borderColor = '#ef4444';
+              tag.style.color = '#f87171';
+              tagText.textContent = `${item.info.detected_markers.length} Synthetic AI Marker(s) Detected`;
+            } else {
+              tag.style.background = 'rgba(16, 185, 129, 0.15)';
+              tag.style.borderColor = '#10b981';
+              tag.style.color = '#34d399';
+              tagText.textContent = 'No synthetic markers found. Clean container.';
+            }
+          }
+        } else if (item.uploadStatus === 'error') {
+          if (wrap) wrap.style.display = 'none';
+          if (stats) stats.innerHTML = `<span style="color:#ef4444">Upload failed</span> &bull; ${(item.file.size / (1024 * 1024)).toFixed(2)} MB`;
+          if (badge) {
+            badge.textContent = 'ERROR';
+            badge.style.background = '#ef4444';
+          }
+        }
+      } else {
+        const wrap = document.getElementById(`batchProgressWrap_${idx}`);
+        const fill = document.getElementById(`batchProgressFill_${idx}`);
+        const text = document.getElementById(`batchProgressText_${idx}`);
+        const meta = document.getElementById(`batchMeta_${idx}`);
+        const badge = document.getElementById(`batchBadge_${idx}`);
+
+        if (fill) fill.style.width = `${item.uploadProgress}%`;
+        if (text) text.textContent = `${item.uploadProgress}%`;
+
+        if (item.uploadStatus === 'uploading') {
+          if (wrap) wrap.style.display = 'flex';
+          if (meta) meta.innerHTML = `Uploading (${item.uploadProgress}%) &bull; ${(item.file.size / (1024 * 1024)).toFixed(2)} MB`;
+          if (badge) {
+            badge.textContent = `${item.uploadProgress}%`;
+            badge.className = 'batch-item-badge badge-uploading';
+          }
+        } else if (item.uploadStatus === 'uploaded') {
+          if (wrap) wrap.style.display = 'none';
+          const isAi = item.info && item.info.is_ai_detected;
+          if (meta) {
+            meta.innerHTML = `<span class="uploaded-tag-pill">✓ UPLOADED</span> &bull; ${item.info.dimensions} &bull; ${item.info.size_formatted}`;
+          }
+          if (badge) {
+            badge.textContent = isAi ? 'AI FOUND' : 'CLEAN';
+            badge.className = isAi ? 'batch-item-badge badge-ai-found' : 'batch-item-badge badge-clean';
+          }
+        } else if (item.uploadStatus === 'error') {
+          if (wrap) wrap.style.display = 'none';
+          if (meta) meta.innerHTML = `<span style="color:#ef4444">Upload failed</span> &bull; ${(item.file.size / (1024 * 1024)).toFixed(2)} MB`;
+          if (badge) {
+            badge.textContent = 'ERROR';
+            badge.className = 'batch-item-badge badge-ai-found';
+          }
+        }
+      }
     }
 
     function escapeHtml(str) {
@@ -1353,8 +1553,13 @@
 
     function removeQueueItem(index) {
       if (index < 0 || index >= queuedFiles.length) return;
-      const removed = queuedFiles.splice(index, 1)[0];
-      appendTermLog('[QUEUE]', `Removed '${removed.file.name}'. ${queuedFiles.length} file(s) remaining.`, '#f59e0b');
+      const removed = queuedFiles[index];
+      if (removed.xhr) {
+        try { removed.xhr.abort(); } catch (_) {}
+      }
+      queuedFiles.splice(index, 1);
+      fileInput.value = '';
+      appendTermLog('[QUEUE]', `Menghapus '${removed.file.name}'. Sisa ${queuedFiles.length} file di antrean.`, '#f59e0b');
 
       if (queuedFiles.length === 0) {
         resetEmptyState();
@@ -1374,8 +1579,8 @@
           </div>
         </div>
         <div class="file-meta-details">
-          <div class="file-name" id="fileName">Waiting for image drop...</div>
-          <div class="file-stats" id="fileStats">Select PNG, JPG, or WebP to begin analysis</div>
+          <div class="file-name" id="fileName">Menunggu gambar...</div>
+          <div class="file-stats" id="fileStats">Pilih atau drop PNG, JPG, atau WebP (Maks 5 file)</div>
           <div class="detected-tag" id="detectedTag" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:var(--text-dim);">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
             <span id="detectedTagText">Ready for file input</span>
@@ -1383,7 +1588,7 @@
         </div>
       `;
       btnActivateText.textContent = 'Activate';
-      appendTermLog('[QUEUE]', 'Queue emptied. Waiting for new images...', '#94a3b8');
+      appendTermLog('[QUEUE]', 'Antrean kosong. Menunggu input gambar baru...', '#94a3b8');
     }
 
     function renderQueueUI() {
@@ -1397,12 +1602,12 @@
         const isScanned = !!item.info;
         const isAi = isScanned ? item.info.is_ai_detected : false;
 
-        let badgeText = 'SCANNING';
-        let badgeBg = '#b91c1c';
+        let badgeText = 'UPLOADING';
+        let badgeBg = '#8b5cf6';
         if (item.status === 'cloaked') {
           badgeText = 'CLOAKED';
           badgeBg = '#059669';
-        } else if (isScanned) {
+        } else if (item.uploadStatus === 'uploaded') {
           badgeText = isAi ? 'AI FOUND' : 'CLEAN';
           badgeBg = isAi ? '#ef4444' : '#10b981';
         }
@@ -1414,21 +1619,26 @@
                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
              </div>`;
 
-        const statsHtml = isScanned
-          ? `${item.info.dimensions} &bull; ${item.info.size_formatted} &bull; ${item.info.format}`
-          : `${(item.file.size / (1024 * 1024)).toFixed(2)} MB &bull; Analyzing container...`;
+        let statsHtml = '';
+        if (item.uploadStatus === 'uploaded') {
+          statsHtml = `<span class="uploaded-tag-pill">✓ UPLOADED</span> &bull; ${item.info ? item.info.dimensions : ''} &bull; ${item.info ? item.info.size_formatted : ''} &bull; ${item.info ? item.info.format : ''}`;
+        } else if (item.uploadStatus === 'error') {
+          statsHtml = `<span style="color:#ef4444">Upload failed</span> &bull; ${(item.file.size / (1024 * 1024)).toFixed(2)} MB`;
+        } else {
+          statsHtml = `Uploading to VPS (${item.uploadProgress}%) &bull; ${(item.file.size / (1024 * 1024)).toFixed(2)} MB`;
+        }
 
         let tagBg = 'rgba(255, 255, 255, 0.05)';
         let tagBorder = 'rgba(255, 255, 255, 0.12)';
         let tagColor = '#94a3b8';
-        let tagMsg = 'Reading container chunks...';
+        let tagMsg = 'Uploading to server memory...';
 
         if (item.status === 'cloaked') {
           tagBg = 'rgba(5, 150, 105, 0.2)';
           tagBorder = '#059669';
           tagColor = '#34d399';
           tagMsg = `Container cloaked bit-for-bit with ${selectedPreset}.`;
-        } else if (isScanned) {
+        } else if (item.uploadStatus === 'uploaded') {
           if (isAi) {
             tagBg = 'rgba(220, 38, 38, 0.15)';
             tagBorder = '#ef4444';
@@ -1442,6 +1652,16 @@
           }
         }
 
+        const showProgress = item.uploadStatus === 'uploading';
+        const progressHtml = `
+          <div class="item-progress-wrap" id="singleProgressWrap" style="${showProgress ? '' : 'display:none;'}">
+            <div class="item-progress-track">
+              <div class="item-progress-fill" id="singleProgressFill" style="width: ${item.uploadProgress}%;"></div>
+            </div>
+            <span class="item-progress-text" id="singleProgressText">${item.uploadProgress}%</span>
+          </div>
+        `;
+
         fileAnalysisCard.innerHTML = `
           <div class="file-thumb-wrap" id="fileThumbWrap">
             ${thumbHtml}
@@ -1450,12 +1670,13 @@
           <div class="file-meta-details">
             <div class="file-name" id="fileName">${escapeHtml(item.file.name)}</div>
             <div class="file-stats" id="fileStats">${statsHtml}</div>
+            ${progressHtml}
             <div class="detected-tag" id="detectedTag" style="background:${tagBg}; border-color:${tagBorder}; color:${tagColor};">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
               <span id="detectedTagText">${tagMsg}</span>
             </div>
           </div>
-          <button type="button" class="item-remove-btn" onclick="removeQueueItem(0)" title="Remove file from queue" style="margin-left: auto;">
+          <button type="button" class="item-remove-btn" onclick="removeQueueItem(0)" title="Hapus gambar dari antrean" style="margin-left: auto;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         `;
@@ -1471,14 +1692,18 @@
               ${queuedFiles.map((item, idx) => {
                 const isScanned = !!item.info;
                 const isAi = isScanned ? item.info.is_ai_detected : false;
-                let badgeClass = 'badge-pending';
-                let badgeText = 'PENDING';
+                let badgeClass = 'badge-uploading';
+                let badgeText = `${item.uploadProgress}%`;
+
                 if (item.status === 'cloaked') {
                   badgeClass = 'badge-cloaked';
                   badgeText = 'CLOAKED';
-                } else if (isScanned) {
+                } else if (item.uploadStatus === 'uploaded') {
                   badgeClass = isAi ? 'badge-ai-found' : 'badge-clean';
                   badgeText = isAi ? 'AI FOUND' : 'CLEAN';
+                } else if (item.uploadStatus === 'error') {
+                  badgeClass = 'badge-ai-found';
+                  badgeText = 'ERROR';
                 }
 
                 const thumbSrc = item.previewUrl || item.base64;
@@ -1488,9 +1713,16 @@
                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                      </div>`;
 
-                const metaText = item.info
-                  ? `${item.info.dimensions} &bull; ${item.info.size_formatted}`
-                  : `${(item.file.size / (1024*1024)).toFixed(2)} MB &bull; Scanning...`;
+                let metaText = '';
+                if (item.uploadStatus === 'uploaded') {
+                  metaText = `<span class="uploaded-tag-pill">✓ UPLOADED</span> &bull; ${item.info ? item.info.dimensions : ''} &bull; ${item.info ? item.info.size_formatted : ''}`;
+                } else if (item.uploadStatus === 'error') {
+                  metaText = `<span style="color:#ef4444">Upload failed</span> &bull; ${(item.file.size / (1024*1024)).toFixed(2)} MB`;
+                } else {
+                  metaText = `Uploading (${item.uploadProgress}%) &bull; ${(item.file.size / (1024*1024)).toFixed(2)} MB`;
+                }
+
+                const showProgress = item.uploadStatus === 'uploading';
 
                 return `
                   <div class="batch-item-row" id="batchRow_${idx}">
@@ -1500,9 +1732,15 @@
                     <div class="batch-item-info">
                       <div class="batch-item-name">${escapeHtml(item.file.name)}</div>
                       <div class="batch-item-meta" id="batchMeta_${idx}">${metaText}</div>
+                      <div class="item-progress-wrap" id="batchProgressWrap_${idx}" style="${showProgress ? '' : 'display:none;'}">
+                        <div class="item-progress-track">
+                          <div class="item-progress-fill" id="batchProgressFill_${idx}" style="width: ${item.uploadProgress}%;"></div>
+                        </div>
+                        <span class="item-progress-text" id="batchProgressText_${idx}">${item.uploadProgress}%</span>
+                      </div>
                     </div>
                     <span class="batch-item-badge ${badgeClass}" id="batchBadge_${idx}">${badgeText}</span>
-                    <button type="button" class="item-remove-btn" onclick="removeQueueItem(${idx})" title="Remove file from queue">
+                    <button type="button" class="item-remove-btn" onclick="removeQueueItem(${idx})" title="Hapus gambar dari antrean">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   </div>
@@ -1515,27 +1753,35 @@
       }
     }
 
-    // Activate Button Handler (Awakens Mangekyou Loading Screen)
+    // Activate Button Handler (Awakens Minimalist Mangekyou Loading Screen - No Text, Dim Halo)
     btnActivate.addEventListener('click', async () => {
       if (queuedFiles.length === 0) {
-        alert('Please drop or select up to 5 images into the Genjutsu arena first!');
+        alert('Harap pilih atau drag & drop hingga 5 gambar terlebih dahulu!');
         fileInput.click();
         return;
       }
 
-      // Show Genjutsu Overlay (The rotating eye loading screen)
+      // Check if any file is still uploading
+      const stillUploading = queuedFiles.some(f => f.uploadStatus === 'uploading');
+      if (stillUploading) {
+        appendTermLog('[WAIT]', 'Menunggu proses unggah latar belakang selesai sebelum aktivasi...', '#f59e0b');
+      }
+
+      let waitIter = 0;
+      while (queuedFiles.some(f => f.uploadStatus === 'uploading') && waitIter < 40) {
+        await new Promise(r => setTimeout(r, 200));
+        waitIter++;
+      }
+
+      // Show Minimalist Genjutsu Overlay (The rotating eye with dim ambient halo, NO text)
       const overlay = document.getElementById('genjutsuOverlay');
-      const genjutsuStatus = document.getElementById('genjutsuStatus');
-      const genjutsuFill = document.getElementById('genjutsuFill');
       overlay.classList.add('active');
-      genjutsuFill.style.width = '0%';
-      genjutsuStatus.textContent = `Awakening Mangekyou... Cloaking ${queuedFiles.length} file(s)...`;
 
       btnActivate.style.pointerEvents = 'none';
       btnActivate.style.filter = 'brightness(1.2)';
       btnActivateText.textContent = `Cloaking ${queuedFiles.length} File(s)...`;
 
-      appendTermLog('[EXEC]', `Initiating batch Genjutsu for ${queuedFiles.length} file(s) with '${selectedPreset}'...`, '#38bdf8');
+      appendTermLog('[EXEC]', `Mengaktifkan Genjutsu untuk ${queuedFiles.length} file dengan profil '${selectedPreset}'...`, '#38bdf8');
 
       let successCount = 0;
       for (let i = 0; i < queuedFiles.length; i++) {
@@ -1548,29 +1794,17 @@
           badge.className = 'batch-item-badge badge-pending';
         }
 
-        genjutsuStatus.textContent = `[${i + 1}/${queuedFiles.length}] Cloaking '${item.file.name}' with ${selectedPreset}...`;
-        genjutsuFill.style.width = `${((i) / queuedFiles.length) * 100}%`;
         appendTermLog('[JUTSU]', `[${i + 1}/${queuedFiles.length}] Cloaking '${item.file.name}'...`, '#a78bfa');
 
-        // Read base64 only if not yet read
-        if (!item.base64) {
-          item.base64 = await new Promise((res, rej) => {
-            const reader = new FileReader();
-            reader.onload = () => res(reader.result);
-            reader.onerror = rej;
-            reader.readAsDataURL(item.file);
-          });
-        }
-
         try {
+          const payload = item.file_id
+            ? { file_id: item.file_id, filename: item.file.name, preset: selectedPreset }
+            : { file: item.base64, filename: item.file.name, preset: selectedPreset };
+
           const resp = await fetch('api/sanitize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              file: item.base64,
-              filename: item.file.name,
-              preset: selectedPreset
-            })
+            body: JSON.stringify(payload)
           });
 
           const res = await resp.json();
@@ -1583,9 +1817,9 @@
               badge.className = 'batch-item-badge badge-cloaked';
             }
 
-            appendTermLog('[SUCCESS]', `[${i + 1}/${queuedFiles.length}] Cloaked '${res.filename}' (Delta: ${res.delta_bytes} B)`, '#34d399');
+            appendTermLog('[SUCCESS]', `[${i + 1}/${queuedFiles.length}] Selesai: '${res.filename}' (Delta: ${res.delta_bytes} B)`, '#34d399');
 
-            // Trigger download
+            // Trigger instant download
             const link = document.createElement('a');
             link.href = 'data:application/octet-stream;base64,' + res.file;
             link.download = res.filename;
@@ -1593,24 +1827,22 @@
             link.click();
             document.body.removeChild(link);
 
-            genjutsuFill.style.width = `${((i + 1) / queuedFiles.length) * 100}%`;
-
             if (i < queuedFiles.length - 1) {
-              await new Promise(r => setTimeout(r, 350));
+              await new Promise(r => setTimeout(r, 200));
             }
           } else {
             if (badge) {
               badge.textContent = 'ERROR';
               badge.className = 'batch-item-badge badge-ai-found';
             }
-            appendTermLog('[ERROR]', `Failed on '${item.file.name}': ${res.error}`, '#ef4444');
+            appendTermLog('[ERROR]', `Gagal memproses '${item.file.name}': ${res.error}`, '#ef4444');
           }
         } catch (err) {
           if (badge) {
             badge.textContent = 'ERROR';
             badge.className = 'batch-item-badge badge-ai-found';
           }
-          appendTermLog('[ERROR]', `Failed on '${item.file.name}': ${err.message}`, '#ef4444');
+          appendTermLog('[ERROR]', `Gagal memproses '${item.file.name}': ${err.message}`, '#ef4444');
         }
       }
 
@@ -1618,33 +1850,26 @@
         renderQueueUI();
       }
 
-      genjutsuStatus.textContent = `Genjutsu Complete! ${successCount}/${queuedFiles.length} file(s) disguised.`;
-      genjutsuFill.style.width = '100%';
-
-      // Smoothly hide overlay after completion
+      // Smoothly hide loading overlay once all ready
       setTimeout(() => {
         overlay.classList.remove('active');
-      }, 500);
+      }, 400);
 
-      appendTermLog('[ALL COMPLETE]', `Batch Genjutsu finished! ${successCount}/${queuedFiles.length} file(s) cloaked bit-for-bit.`, '#10b981');
+      appendTermLog('[ALL COMPLETE]', `Genjutsu selesai! ${successCount}/${queuedFiles.length} file berhasil disamarkan bit-for-bit.`, '#10b981');
       btnActivate.style.pointerEvents = 'auto';
       btnActivate.style.filter = '';
       btnActivateText.textContent = queuedFiles.length > 1 ? `Activate (${queuedFiles.length} Files)` : 'Activate';
     });
   </script>
 
-  <!-- Genjutsu Activation Loading Overlay -->
+  <!-- Genjutsu Activation Loading Overlay (Minimalist Mangekyou - No Text, Dim Ambient Halo) -->
   <div class="genjutsu-overlay" id="genjutsuOverlay">
     <div class="genjutsu-modal">
-      <div class="genjutsu-eye-wrap">
+      <div class="genjutsu-halo-wrap">
+        <div class="genjutsu-dim-halo"></div>
         <svg class="genjutsu-eye-spin" viewBox="0 0 300 300">
           <use href="#sasuke-mangekyou-art" xlink:href="#sasuke-mangekyou-art" />
         </svg>
-      </div>
-      <div class="genjutsu-title">CASTING SHARINGAN GENJUTSU</div>
-      <div class="genjutsu-status" id="genjutsuStatus">Cloaking AI metadata into camera disguise...</div>
-      <div class="genjutsu-progress-bar">
-        <div class="genjutsu-progress-fill" id="genjutsuFill"></div>
       </div>
     </div>
   </div>
