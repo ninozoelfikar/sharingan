@@ -455,6 +455,35 @@
       box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
     }
 
+    .item-remove-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--text-dim);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      padding: 0;
+    }
+
+    .item-remove-btn:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: #ef4444;
+      color: #f87171;
+      transform: scale(1.1);
+    }
+
+    .item-remove-btn svg {
+      width: 13px;
+      height: 13px;
+      stroke-width: 2.2;
+    }
+
     /* Jutsu Terminal Output */
     .terminal-box {
       margin-top: 20px;
@@ -1074,26 +1103,121 @@
       processQueueInspection();
     }
 
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function removeQueueItem(index) {
+      if (index < 0 || index >= queuedFiles.length) return;
+      const removed = queuedFiles.splice(index, 1)[0];
+      appendTermLog('[QUEUE]', `Removed '${removed.file.name}'. ${queuedFiles.length} file(s) remaining.`, '#f59e0b');
+
+      if (queuedFiles.length === 0) {
+        resetEmptyState();
+        return;
+      }
+      renderQueueUI();
+    }
+    window.removeQueueItem = removeQueueItem;
+
+    function resetEmptyState() {
+      queuedFiles = [];
+      fileInput.value = '';
+      fileAnalysisCard.innerHTML = `
+        <div class="file-thumb-wrap" id="fileThumbWrap">
+          <div style="width:100%; height:100%; background: #1c1c24; display:flex; align-items:center; justify-content:center;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+        <div class="file-meta-details">
+          <div class="file-name" id="fileName">Waiting for image drop...</div>
+          <div class="file-stats" id="fileStats">Select PNG, JPG, or WebP to begin analysis</div>
+          <div class="detected-tag" id="detectedTag" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:var(--text-dim);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <span id="detectedTagText">Ready for file input</span>
+          </div>
+        </div>
+      `;
+      btnActivateText.textContent = 'Activate';
+      appendTermLog('[QUEUE]', 'Queue emptied. Waiting for new images...', '#94a3b8');
+    }
+
     function renderQueueUI() {
-      if (queuedFiles.length === 0) return;
+      if (queuedFiles.length === 0) {
+        resetEmptyState();
+        return;
+      }
 
       if (queuedFiles.length === 1) {
         const item = queuedFiles[0];
+        const isScanned = !!item.info;
+        const isAi = isScanned ? item.info.is_ai_detected : false;
+
+        let badgeText = 'SCANNING';
+        let badgeBg = '#b91c1c';
+        if (item.status === 'cloaked') {
+          badgeText = 'CLOAKED';
+          badgeBg = '#059669';
+        } else if (isScanned) {
+          badgeText = isAi ? 'AI FOUND' : 'CLEAN';
+          badgeBg = isAi ? '#ef4444' : '#10b981';
+        }
+
+        const thumbHtml = item.base64
+          ? `<img src="${item.base64}">`
+          : `<div style="width:100%; height:100%; background: #1c1c24; display:flex; align-items:center; justify-content:center;">
+               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+             </div>`;
+
+        const statsHtml = isScanned
+          ? `${item.info.dimensions} &bull; ${item.info.size_formatted} &bull; ${item.info.format}`
+          : `${(item.file.size / (1024 * 1024)).toFixed(2)} MB &bull; Analyzing container...`;
+
+        let tagBg = 'rgba(255, 255, 255, 0.05)';
+        let tagBorder = 'rgba(255, 255, 255, 0.12)';
+        let tagColor = '#94a3b8';
+        let tagMsg = 'Reading container chunks...';
+
+        if (item.status === 'cloaked') {
+          tagBg = 'rgba(5, 150, 105, 0.2)';
+          tagBorder = '#059669';
+          tagColor = '#34d399';
+          tagMsg = `Container cloaked bit-for-bit with ${selectedPreset}.`;
+        } else if (isScanned) {
+          if (isAi) {
+            tagBg = 'rgba(220, 38, 38, 0.15)';
+            tagBorder = '#ef4444';
+            tagColor = '#f87171';
+            tagMsg = `${item.info.detected_markers.length} Synthetic AI Marker(s) Detected`;
+          } else {
+            tagBg = 'rgba(16, 185, 129, 0.15)';
+            tagBorder = '#10b981';
+            tagColor = '#34d399';
+            tagMsg = 'No synthetic markers found. Clean container.';
+          }
+        }
+
         fileAnalysisCard.innerHTML = `
           <div class="file-thumb-wrap" id="fileThumbWrap">
-            <div style="width:100%; height:100%; background: #1c1c24; display:flex; align-items:center; justify-content:center;">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <span class="seal-ai-badge" id="sealBadge">SCANNING</span>
+            ${thumbHtml}
+            <span class="seal-ai-badge" id="sealBadge" style="background: ${badgeBg};">${badgeText}</span>
           </div>
           <div class="file-meta-details">
-            <div class="file-name" id="fileName">${item.file.name}</div>
-            <div class="file-stats" id="fileStats">${(item.file.size / (1024 * 1024)).toFixed(2)} MB &bull; Analyzing container...</div>
-            <div class="detected-tag" id="detectedTag">
+            <div class="file-name" id="fileName">${escapeHtml(item.file.name)}</div>
+            <div class="file-stats" id="fileStats">${statsHtml}</div>
+            <div class="detected-tag" id="detectedTag" style="background:${tagBg}; border-color:${tagBorder}; color:${tagColor};">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-              <span id="detectedTagText">Reading container chunks...</span>
+              <span id="detectedTagText">${tagMsg}</span>
             </div>
           </div>
+          <button type="button" class="item-remove-btn" onclick="removeQueueItem(0)" title="Remove file from queue" style="margin-left: auto;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         `;
         btnActivateText.textContent = 'Activate';
       } else {
@@ -1104,20 +1228,45 @@
               <span class="batch-limit-pill">MAX 5 FILES</span>
             </div>
             <div class="batch-list" id="batchList">
-              ${queuedFiles.map((item, idx) => `
-                <div class="batch-item-row" id="batchRow_${idx}">
-                  <div class="batch-item-thumb" id="batchThumb_${idx}">
-                    <div style="width:100%;height:100%;background:#1c1c24;display:flex;align-items:center;justify-content:center;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              ${queuedFiles.map((item, idx) => {
+                const isScanned = !!item.info;
+                const isAi = isScanned ? item.info.is_ai_detected : false;
+                let badgeClass = 'badge-pending';
+                let badgeText = 'PENDING';
+                if (item.status === 'cloaked') {
+                  badgeClass = 'badge-cloaked';
+                  badgeText = 'CLOAKED';
+                } else if (isScanned) {
+                  badgeClass = isAi ? 'badge-ai-found' : 'badge-clean';
+                  badgeText = isAi ? 'AI FOUND' : 'CLEAN';
+                }
+
+                const thumbHtml = item.base64
+                  ? `<img src="${item.base64}">`
+                  : `<div style="width:100%;height:100%;background:#1c1c24;display:flex;align-items:center;justify-content:center;">
+                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                     </div>`;
+
+                const metaText = item.info
+                  ? `${item.info.dimensions} &bull; ${item.info.size_formatted}`
+                  : `${(item.file.size / (1024*1024)).toFixed(2)} MB &bull; Scanning...`;
+
+                return `
+                  <div class="batch-item-row" id="batchRow_${idx}">
+                    <div class="batch-item-thumb" id="batchThumb_${idx}">
+                      ${thumbHtml}
                     </div>
+                    <div class="batch-item-info">
+                      <div class="batch-item-name">${escapeHtml(item.file.name)}</div>
+                      <div class="batch-item-meta" id="batchMeta_${idx}">${metaText}</div>
+                    </div>
+                    <span class="batch-item-badge ${badgeClass}" id="batchBadge_${idx}">${badgeText}</span>
+                    <button type="button" class="item-remove-btn" onclick="removeQueueItem(${idx})" title="Remove file from queue">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
                   </div>
-                  <div class="batch-item-info">
-                    <div class="batch-item-name">${item.file.name}</div>
-                    <div class="batch-item-meta" id="batchMeta_${idx}">${(item.file.size / (1024*1024)).toFixed(2)} MB &bull; Scanning...</div>
-                  </div>
-                  <span class="batch-item-badge badge-pending" id="batchBadge_${idx}">PENDING</span>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
             </div>
           </div>
         `;
@@ -1125,84 +1274,74 @@
       }
     }
 
+    let isInspecting = false;
     async function processQueueInspection() {
-      for (let i = 0; i < queuedFiles.length; i++) {
-        const item = queuedFiles[i];
-        await new Promise(resolve => {
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-            item.base64 = e.target.result;
+      if (isInspecting) return;
+      isInspecting = true;
+      try {
+        while (true) {
+          const item = queuedFiles.find(f => !f.info && f.status === 'pending');
+          if (!item) break;
 
-            // Update thumbnail
-            if (queuedFiles.length === 1) {
-              const thumbWrap = document.getElementById('fileThumbWrap');
-              if (thumbWrap) {
-                thumbWrap.innerHTML = `
-                  <img src="${item.base64}">
-                  <span class="seal-ai-badge" id="sealBadge">SCANNING</span>
-                `;
+          item.status = 'scanning';
+          if (!item.base64) {
+            try {
+              item.base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(item.file);
+              });
+            } catch (readErr) {
+              item.status = 'error';
+              appendTermLog('[ERROR]', `Failed reading '${item.file.name}': ${readErr.message}`, '#ef4444');
+              renderQueueUI();
+              continue;
+            }
+          }
+
+          // Update thumbnail immediately in UI
+          renderQueueUI();
+
+          try {
+            appendTermLog('[SCAN]', `Disassembling '${item.file.name}'...`);
+            const resp = await fetch('api/inspect', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ file: item.base64, filename: item.file.name })
+            });
+            const res = await resp.json();
+
+            if (res.success && res.data) {
+              item.info = res.data;
+              const isAi = res.data.is_ai_detected;
+              item.status = isAi ? 'ai_found' : 'clean';
+              renderQueueUI();
+
+              if (isAi) {
+                item.info.detected_markers.forEach(m => {
+                  appendTermLog('[DETECTED]', `'${item.file.name}': ${m.tag} (${m.type})`, '#f87171');
+                });
+              } else {
+                appendTermLog('[CLEAN]', `'${item.file.name}': 0 synthetic markers found.`, '#34d399');
               }
             } else {
-              const thumbEl = document.getElementById(`batchThumb_${i}`);
-              if (thumbEl) {
-                thumbEl.innerHTML = `<img src="${item.base64}">`;
-              }
+              item.status = 'error';
+              appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${res.error || 'Unknown error'}`, '#ef4444');
+              renderQueueUI();
             }
-
-            // Inspect via API
-            try {
-              appendTermLog('[SCAN]', `[${i + 1}/${queuedFiles.length}] Disassembling '${item.file.name}'...`);
-              const resp = await fetch('api/inspect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ file: item.base64, filename: item.file.name })
-              });
-              const res = await resp.json();
-
-              if (res.success && res.data) {
-                item.info = res.data;
-                const isAi = res.data.is_ai_detected;
-                item.status = isAi ? 'ai_found' : 'clean';
-
-                if (queuedFiles.length === 1) {
-                  const fileStatsEl = document.getElementById('fileStats');
-                  const sealBadgeEl = document.getElementById('sealBadge');
-                  const detectedTagTextEl = document.getElementById('detectedTagText');
-                  if (fileStatsEl) fileStatsEl.innerHTML = `${item.info.dimensions} &bull; ${item.info.size_formatted} &bull; ${item.info.format}`;
-                  if (sealBadgeEl) {
-                    sealBadgeEl.textContent = isAi ? 'AI FOUND' : 'CLEAN';
-                    sealBadgeEl.style.background = isAi ? '#ef4444' : '#10b981';
-                  }
-                  if (detectedTagTextEl) {
-                    detectedTagTextEl.textContent = isAi 
-                      ? `${item.info.detected_markers.length} Synthetic AI Marker(s) Detected`
-                      : 'No synthetic markers found. Clean container.';
-                  }
-                } else {
-                  const metaEl = document.getElementById(`batchMeta_${i}`);
-                  const badgeEl = document.getElementById(`batchBadge_${i}`);
-                  if (metaEl) metaEl.innerHTML = `${item.info.dimensions} &bull; ${item.info.size_formatted}`;
-                  if (badgeEl) {
-                    badgeEl.textContent = isAi ? 'AI FOUND' : 'CLEAN';
-                    badgeEl.className = isAi ? 'batch-item-badge badge-ai-found' : 'batch-item-badge badge-clean';
-                  }
-                }
-
-                if (isAi) {
-                  item.info.detected_markers.forEach(m => {
-                    appendTermLog('[DETECTED]', `'${item.file.name}': ${m.tag} (${m.type})`, '#f87171');
-                  });
-                }
-              }
-            } catch (err) {
-              appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${err.message}`, '#f87171');
-            }
-            resolve();
-          };
-          reader.readAsDataURL(item.file);
-        });
+          } catch (err) {
+            item.status = 'error';
+            appendTermLog('[ERROR]', `Inspection failed on '${item.file.name}': ${err.message}`, '#ef4444');
+            renderQueueUI();
+          }
+        }
+      } finally {
+        isInspecting = false;
       }
-      appendTermLog('[STATUS]', `Inspection complete for ${queuedFiles.length} file(s). Ready for Genjutsu activation.`, '#34d399');
+      if (queuedFiles.length > 0) {
+        appendTermLog('[STATUS]', `Inspection complete for ${queuedFiles.length} file(s). Ready for Genjutsu activation.`, '#34d399');
+      }
     }
 
     // Activate Button Handler (Sequential Batch Execution)
@@ -1284,11 +1423,7 @@
       }
 
       if (queuedFiles.length === 1) {
-        const sealBadgeEl = document.getElementById('sealBadge');
-        if (sealBadgeEl) {
-          sealBadgeEl.textContent = 'CLOAKED';
-          sealBadgeEl.style.background = '#059669';
-        }
+        renderQueueUI();
       }
 
       appendTermLog('[ALL COMPLETE]', `Batch Genjutsu finished! ${successCount}/${queuedFiles.length} file(s) cloaked bit-for-bit.`, '#10b981');
